@@ -1,9 +1,5 @@
 import itertools
-
-if __debug__:
-    from SimPy.SimulationTrace import *
-else:
-    from SimPy.Simulation import *
+from SimPy.Simulation import *
 
 _msg_counter = itertools.count()
 

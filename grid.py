@@ -1,8 +1,5 @@
 from random import choice
-if __debug__:
-    from SimPy.SimulationTrace import Resource, Tally
-else:
-    from SimPy.Simulation import Resource, Tally
+from SimPy.Simulation import Resource, Tally
 
 from util import RingBuffer
 

@@ -1,12 +1,22 @@
-from models import BroadcastModel
-model = BroadcastModel(size=100, arrival=0.1)
-
+#import model
 #from base import BaseModel
-#model = BaseModel(size=100, arrival=1)
+from models import BroadcastModel
 
-model.run(until=100)
+size=100
+arrive=0.1
 
-import stats
-print "util:", stats.mean_server_utilisation(model)
-print "wait:", stats.mean_queue_time(model)
+
+#m = model.Model()
+#m = BaseModel(size=100, arrival=0.1)
+m = BroadcastModel(size=100, arrival=0.1)
+m.run(until=100)
+
+
+#import tsim
+#initialize()
+#g = model.Generator()
+#activate(g, g.generate())
+#simulate(until=100)
+
+
 
