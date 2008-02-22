@@ -33,7 +33,7 @@ class BroadcastMessage(Message):
         super(BroadcastMessage, self).init(*a, **kw)
 
 class BroadcastModel(BaseModel):
-    def new_message(self):
+    def new_process(self):
         dst = self.random_node()
         msg = BroadcastMessage(self)
         return msg, msg.send(None, dst, ttl=2)
