@@ -1,5 +1,4 @@
 import itertools
-from copy import deepcopy
 
 if __debug__:
     from SimPy.SimulationTrace import *
@@ -27,10 +26,11 @@ class Message(Process):
         self.init(src, dst, **kw)
 
         if self.msgid in self.dst.msg_history:
+            # TODO collect dropped stats
             self.log("already seen message, dropping")
             raise StopIteration
         else:
-            self.dst.msg_history.append(deepcopy(self.msgid))
+            self.dst.msg_history.append(self.msgid)
 
         if self.src != None:
             #self.log("being sent from node %d" % self.src.id)
@@ -41,11 +41,10 @@ class Message(Process):
             pass
             #self.log("arrived from source")
 
-        # wait for the processor
+        # wait for the processor, recording waiting stats
         yield request, self, dst.processor
-        #self.log("got processor, waited %s" % (now() - self.arrived))
 
-        # TODO queue stats
+        #self.log("got processor, waited %s" % (now() - self.arrived))
 
         # simulate the work
         yield hold, self, dst.service_time()
@@ -55,8 +54,8 @@ class Message(Process):
             activate(msg, generator)
 
         # release the processor
-        #self.log("finished")
         yield release, self, dst.processor
+        # self.log("finished")
 
     def init(self, src, dst, **kw):
         self.history.add(dst)
