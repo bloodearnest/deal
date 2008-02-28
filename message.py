@@ -1,13 +1,13 @@
 import itertools
+import logging
+
 from SimPy.Simulation import *
+
+from util import LogProxy
 
 _msg_counter = itertools.count()
 
 class Message(Process):
-
-    def log(self, msg):
-        pass
-        #print "%s at node %d: %s" % (self.name, self.dst.id, msg)
 
     def __init__(self, model, **kw):
         # clone msg id if passed
@@ -16,43 +16,48 @@ class Message(Process):
         if not self.msgid:
             self.msgid = _msg_counter.next()
         self.model = model
+        self.log = LogProxy(self)
         super(Message, self).__init__(name="Message %d" % self.msgid)
 
     def send(self, src, dst, **kw):
         self.init(src, dst, **kw)
+        self.log.info("%s started" % self)
+
+        if src != None:
+            src.log.info("sending %s from %s to %s" % (self, src, dst))
+            latency = self.model.nodes.link_latency(src, dst)
+            yield hold, self, latency
+            dst.log.info("%s arrived at %s from %s" % (self, dst, src))
+        else:
+            pass
+            dst.log.info("%s arrived from source" % self)
+
 
         if self.msgid in dst.server.msg_history:
             # TODO collect dropped stats
-            self.log("already seen message, dropping")
+            dst.server.log.info("already seen message, dropping")
             raise StopIteration
         else:
+            dst.server.log.info("adding message %d to history" % self.msgid)
             dst.server.msg_history.append(self.msgid)
-
-        if src != None:
-            self.log("being sent from node %d" % src.id)
-            latency = self.model.nodes.link_latency(src, dst)
-            yield hold, self, latency
-            self.log("arrived after %s" % latency)
-        else:
-            pass
-            self.log("arrived from source")
 
         # wait for the processor, recording waiting stats
         yield request, self, dst.server.processor
 
-        self.log("got processor, waited %s" % (now() - self.arrived))
+        self.log.info("%s got processor on %s" % (self, dst))
 
         # simulate the work
         yield hold, self, dst.server.service()
 
-        self.log("calling process")
+        self.log.info("%s processing" % self)
+
         # do our work, sending any messages
         for msg in self.process(src, dst, **kw):
             activate(*msg)
 
         # release the processor
         yield release, self, dst.server.processor
-        self.log("finished")
+        self.log.info("%s finished" % self)
 
     def init(self, src, dst, **kw):
         self.history.add(dst)
@@ -63,6 +68,9 @@ class Message(Process):
         if False:
             yield None # never executes, but converts function to generator
         raise StopIteration
+
+    def __str__(self):
+        return "message %d" % self.msgid
 
     #def __del__(self):
     #    self.log("collected")

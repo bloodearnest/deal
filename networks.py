@@ -1,13 +1,15 @@
 import random
+import logging
 from stats import dists
-from util import sortedtuple
+from util import sortedtuple, LogProxy
+
 
 class Node(object):
     """Basic netowrk node."""
     def __init__(self, id):
         self.id = id
-        self.name = "Node %d" % id
         self.links = set()  # links to other nodes
+        self.log = LogProxy(self)
 
     def __lt__(self, other):
         """id comparision, allows sorted pairs of nodes as a dict key."""
@@ -20,6 +22,9 @@ class Node(object):
     def random_node(self):
         """Choose a random node from this nodes links."""
         return random.choice(self.links)
+
+    def __str__(self):
+        return "node %d" % self.id
 
 
 class Network(list):
