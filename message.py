@@ -21,16 +21,16 @@ class Message(Process):
     def send(self, src, dst, **kw):
         self.init(src, dst, **kw)
 
-        if self.msgid in self.dst.msg_history:
+        if self.msgid in dst.server.msg_history:
             # TODO collect dropped stats
             self.log("already seen message, dropping")
             raise StopIteration
         else:
-            self.dst.msg_history.append(self.msgid)
+            dst.server.msg_history.append(self.msgid)
 
-        if self.src != None:
-            self.log("being sent from node %d" % self.src.id)
-            latency = self.model.link_latency(src, dst)
+        if src != None:
+            self.log("being sent from node %d" % src.id)
+            latency = self.model.nodes.link_latency(src, dst)
             yield hold, self, latency
             self.log("arrived after %s" % latency)
         else:
@@ -38,26 +38,24 @@ class Message(Process):
             self.log("arrived from source")
 
         # wait for the processor, recording waiting stats
-        yield request, self, dst.processor
+        yield request, self, dst.server.processor
 
         self.log("got processor, waited %s" % (now() - self.arrived))
 
         # simulate the work
-        yield hold, self, dst.service_time()
+        yield hold, self, dst.server.service()
 
         self.log("calling process")
         # do our work, sending any messages
-        for msg in self.process():
+        for msg in self.process(src, dst, **kw):
             activate(*msg)
 
         # release the processor
-        yield release, self, dst.processor
+        yield release, self, dst.server.processor
         self.log("finished")
 
     def init(self, src, dst, **kw):
         self.history.add(dst)
-        self.dst = dst
-        self.src = src
         self.arrived = now()
 
     def process(self):

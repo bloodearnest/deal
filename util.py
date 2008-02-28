@@ -1,4 +1,6 @@
 
+sortedtuple = lambda *x: tuple(sorted(x))
+
 class RingBuffer(list):
     """ class that implements a not-yet-full buffer """
     def __init__(self, size):

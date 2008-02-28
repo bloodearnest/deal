@@ -1,14 +1,15 @@
 #import model
 #from base import BaseModel
 from models import BroadcastModel
+from networks import Topologies
 
-size=10000
-arrive=0.001
+size=100
+arrive=0.1
 
 
 #m = model.Model()
 #m = BaseModel(size=100, arrival=0.1)
-m = BroadcastModel(size=size, arrival=arrive)
+m = BroadcastModel(size=size, arrival=arrive, topology=Topologies.alltoall)
 m.run(until=300)
 
 

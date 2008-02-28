@@ -31,11 +31,14 @@ class dists(object):
         return lambda: randint(a, b)
 
 
-def list_mean(items, attr):
-    return sum(getattr(i, attr) for i in items) / float(len(items))
+# general stat calculation functions
+def list_mean(items, getter):
+    return sum(getter(i) for i in items) / float(len(items))
 
 def mean_server_utilisation(model):
-    return list_mean(model.nodes, 'mean_utilisation')
+    return list_mean(model.nodes, lambda x: x.server.mean_utilisation)
 
 def mean_queue_time(model):
-    return list_mean(model.nodes, 'mean_queue_wait')
+    return list_mean(model.nodes, lambda x: x.server.mean_queue_wait)
+
+

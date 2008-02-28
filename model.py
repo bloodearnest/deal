@@ -20,7 +20,6 @@ class Model(object):
         g = self.Generator('generator')
         activate(g, g.generate(self))
 
-
     def new_process(self):
         """Generates new process entering the system"""
         p = DummyProcess("dummy process")

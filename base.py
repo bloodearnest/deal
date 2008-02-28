@@ -3,9 +3,9 @@ import random
 from model import Model
 from message import Message
 
-from grid import Node
+from networks import Node, Network, Topologies
+from grid import Server
 from stats import dists
-import networks
 
 class BaseModel(Model):
     def __init__(self,
@@ -16,46 +16,27 @@ class BaseModel(Model):
                  service_dist = dists.gamma,
                  mean_latencies = dists.normal(1, 0.25),
                  latency_dist = dists.gamma,
-                 network = networks.random):
+                 topology = Topologies.random):
 
         super(BaseModel, self).__init__(arrival)
+
         self.size = size
-
-        # generate network nodes
-        # TODO: generalise this with node factory function
-        self.nodes = [Node(i, mean_services(), service_dist)
-                      for i in range(size)]
-
-        # network 
-        # TODO generalise with with factory function
-        self.degree = mean_degree
-        self.links = {}
         self.mean_latencies = mean_latencies
         self.latency_dist = latency_dist
-        network(self) # build network
+
+        # generate network nodes
+        self.nodes = Network(Node(i) for i in range(size))
+        # generate the connections on the network
+        topology(self.nodes, mean_degree, mean_latencies, latency_dist)
+
+        # add model specific components
+        for node in self.nodes:
+            node.server = Server(node, service_dist(mean_services()))
+
 
     def new_process(self):
-        dst = self.random_node()
+        dst = self.nodes.random_node()
         msg = Message(self)
         return msg, msg.send(None, dst)
 
 
-    # network related methods
-    def _rand_node(self):
-        return random.randint(0, self.size - 1)
-
-    def random_node_id(self, exclude=-1):
-        node = self._rand_node()
-        while node == exclude:
-            node = self._rand_node()
-        return node
-
-    def random_node(self, exclude=None):
-        exclue = exclude and exclude.id or -1
-        return self.nodes[self.random_node_id(exclude)]
-
-    def link_latency(self, node, other):
-        """Generate a latency between two links, using their variate generator
-        latency."""
-        link = tuple(sorted((node, other))) # sorted tuple is dict key
-        return self.links[link]()
