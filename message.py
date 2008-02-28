@@ -6,7 +6,8 @@ _msg_counter = itertools.count()
 class Message(Process):
 
     def log(self, msg):
-        print "%s at node %d: %s" % (self.name, self.dst.id, msg)
+        pass
+        #print "%s at node %d: %s" % (self.name, self.dst.id, msg)
 
     def __init__(self, model, **kw):
         # clone msg id if passed
@@ -65,5 +66,5 @@ class Message(Process):
             yield None # never executes, but converts function to generator
         raise StopIteration
 
-    def __del__(self):
-        self.log("collected")
+    #def __del__(self):
+    #    self.log("collected")
