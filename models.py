@@ -1,39 +1,43 @@
-from base import BaseModel
-from message import Message
+import random
+from model import Model
+from networks import Node, Network, Topologies
+from grid import Server, GridResource, Job
+from stats import dists
 
-class BroadcastMessage(Message):
-    """Simple Message that has a TTL and sends itself on to all nodes
-    until the TTL expires"""
+from messages import BroadcastMessage
 
-    def process(self, src, dst, **kw):
-        if self.ttl:
-            # send sname message on
-            ttl = self.ttl - 1
-            sent_some = False
-            old_history = self.history
-            new_history = self.history.union(dst.links)
+class GridModel(Model):
+    def __init__(self,
+                 size,
+                 arrival=1,
+                 mean_degree=2,
+                 mean_resources = dists.gamma(100),
+                 mean_job_sizes = dists.gamma(20),
+                 mean_job_durations = dists.gamma(40),
+                 mean_services = dists.normal(1, 0.25),
+                 service_dist = dists.gamma,
+                 mean_latencies = dists.normal(1, 0.25),
+                 latency_dist = dists.gamma,
+                 topology = Topologies.random):
 
-            for link in dst.links:
-                if link not in old_history: # not already seen
-                    sent_some = True
-                    msg = BroadcastMessage(self.model, msgid=self.msgid,
-                                     history=new_history)
-                    self.log("ttl: %d, passed on to node %d" % (ttl, link.id))
-                    yield msg, msg.send(dst, link, ttl=ttl)
-                else:
-                    self.log("ttl: %d, node %d in history, not passing on" %
-                            (ttl, link.id))
-            if not sent_some:
-                self.log("message received everywhere before ttl expired")
-        else:
-            self.log("TTL expired")
+        super(GridModel, self).__init__(arrival)
 
-    def init(self, *a, **kw):
-        self.ttl = kw.pop('ttl', 3)
-        super(BroadcastMessage, self).init(*a, **kw)
+        self.size = size
 
-class BroadcastModel(BaseModel):
+        # generate network nodes
+        self.nodes = Network(Node(i) for i in range(size))
+
+        # generate the topological connections on the network
+        topology(self.nodes, mean_degree, mean_latencies, latency_dist)
+
+        # add model specific components
+        for node in self.nodes:
+            node.server = Server(node, service_dist(mean_services()))
+            node.resource = GridResource(node.id, int(mean_resources()))
+            node.seller = None
+
     def new_process(self):
         dst = self.nodes.random_node()
         msg = BroadcastMessage(self)
         return msg, msg.send(None, dst, ttl=2)
+

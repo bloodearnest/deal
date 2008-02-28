@@ -58,7 +58,7 @@ class Message(Process):
         self.history.add(dst)
         self.arrived = now()
 
-    def process(self):
+    def process(self, *a, **kw):
         """null iterator"""
         if False:
             yield None # never executes, but converts function to generator

@@ -1,16 +1,13 @@
 #import model
 #from base import BaseModel
-from models import BroadcastModel
+from models import GridModel
 from networks import Topologies
 
 size=100
 arrive=0.1
 
-
-#m = model.Model()
-#m = BaseModel(size=100, arrival=0.1)
-m = BroadcastModel(size=size, arrival=arrive, topology=Topologies.alltoall)
-m.run(until=300)
+m = GridModel(size=size, arrival=arrive)
+m.run(until=500)
 
 
 import stats

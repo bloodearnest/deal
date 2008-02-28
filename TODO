@@ -1,0 +1,26 @@
+
+logging
+ - server
+ - node
+ - message
+ - trader
+
+topologies
+ smallworld
+ scalefree
+ social
+
+traders/auctions
+ quote/bid/ask
+ zi
+ zip
+ gd
+ mgd
+ efficiency
+ utility
+
+grid
+ resource
+ jobs
+
+
