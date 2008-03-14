@@ -1,5 +1,11 @@
 from random import *
 
+def random_other(seq, this):
+    other = choice(seq)
+    while other == this:
+        other = choice(seq)
+    return other
+
 class dists(object):
 
     @staticmethod

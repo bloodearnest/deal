@@ -1,43 +1,53 @@
 import random
 from model import Model
-from networks import Node, Network, Topologies
+from networks import Node, generate_network, Topologies, Latencies
 from grid import Server, GridResource, Job
 from stats import dists
 
 from messages import BroadcastMessage
 
 class GridModel(Model):
+
     def __init__(self,
                  size,
                  arrival=1,
                  mean_degree=2,
-                 mean_resources = dists.gamma(100),
-                 mean_job_sizes = dists.gamma(20),
-                 mean_job_durations = dists.gamma(40),
-                 mean_services = dists.normal(1, 0.25),
+                 resource_size_means = dists.gamma(100),
+                 job_size_means = dists.gamma(20),
+                 job_duration_means = dists.gamma(100),
+                 service_means = dists.normal(1, 0.25),
                  service_dist = dists.gamma,
-                 mean_latencies = dists.normal(1, 0.25),
+                 latency_means = dists.normal(1, 0.25),
                  latency_dist = dists.gamma,
-                 topology = Topologies.random):
+                 topology = None,
+                 latencies = None):
 
         super(GridModel, self).__init__(arrival)
 
-        self.size = size
+        # defaults
+        topology = topology or Topologies.random_by_degree(size, mean_degree);
+        latencies = latencies or Latencies.random(latency_means)
 
-        # generate network nodes
-        self.nodes = Network(Node(i) for i in range(size))
-
-        # generate the topological connections on the network
-        topology(self.nodes, mean_degree, mean_latencies, latency_dist)
+        # generate network
+        self.graph = generate_network(topology)
+        # add latency weights to graph
+        latencies(self.graph)
 
         # add model specific components
-        for node in self.nodes:
-            node.server = Server(node, service_dist(mean_services()))
-            node.resource = GridResource(node.id, int(mean_resources()))
+        for node in self.graph.nodes_iter():
+            node.server = Server(node, service_dist(service_means()))
+            node.resource = GridResource(node, int(resource_size_means()))
             node.seller = None
 
+    @property
+    def nodes(self):
+        return self.graph.nodes()
+
+    def random_node(self):
+        return random.choice(self.nodes)
+
     def new_process(self):
-        dst = self.nodes.random_node()
+        dst = self.random_node()
         msg = BroadcastMessage(self)
         return msg, msg.send(None, dst, ttl=2)
 

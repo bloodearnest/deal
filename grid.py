@@ -1,15 +1,14 @@
 import itertools
-import logging
 from random import choice
 from SimPy.Simulation import Process, Resource, Tally
 
-from util import RingBuffer, LogProxy
+from util import RingBuffer
 
 class Server(object):
 
     def __init__(self, node, service):
         self.id = node.id
-        self.service = service
+        self.service_time = service
 
         # servers processor resource, with stats
         self.processor = Resource(name="Server at %s" % node,
@@ -18,7 +17,6 @@ class Server(object):
 
         # recent history of messages, to avoid re-handling
         self.msg_history = RingBuffer(100)
-        self.log = LogProxy(self)
 
     def __str__(self):
         return "server %d" % self.id
@@ -35,11 +33,11 @@ class Server(object):
 
 
 class GridResource(object):
-    def __init__(self, id, capacity):
-        self.id = id
+    def __init__(self, node, capacity):
+        self.node = node
         self.capacity = capacity
         self.jobs = set()
-        self.util = Tally("Resource %d utilisation" % id)
+        self.util = Tally("Resource %d utilisation" % node.id)
 
     def can_allocate(self, job):
         return job.size <= self.free()
@@ -53,7 +51,7 @@ class GridResource(object):
 
     def cancel(self, job):
         self.remove(job)
-        job.cancel() # cancel previously sheduled finish event
+        job.cancel() # cancel previously scheduled finish event
 
     def remove(self, job):
         assert job in self.jobs
@@ -90,6 +88,7 @@ class Job(Process):
     def execute(self, resource):
         yield hold, self, self.duration     # TODO: add runtime variation
         resource.remove(self)
+
 
     def amount(self):
         return self.size * self.duration

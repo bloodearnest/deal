@@ -1,10 +1,4 @@
 
-logging
- - server
- - node
- - message
- - trader
-
 topologies
  smallworld
  scalefree
@@ -18,9 +12,4 @@ traders/auctions
  mgd
  efficiency
  utility
-
-grid
- resource
- jobs
-
 

@@ -4,31 +4,35 @@ class BroadcastMessage(Message):
     """Simple Message that has a TTL and sends itself on to all nodes
     until the TTL expires"""
 
-    def process(self, src, dst, **kw):
-        if self.ttl:
-            # send sname message on
-            ttl = self.ttl - 1
+    def process(self, src, dst, log, **kw):
+        ttl = kw.pop('ttl', 3)
+        if ttl:
+            # send same message on
+            ttl -= 1
             sent_some = False
             old_history = self.history
-            new_history = self.history.union(dst.links)
+            new_history = old_history.union(dst.neighbors)
 
-            for link in dst.links:
+            for link in dst.neighbors:
                 if link not in old_history: # not already seen
                     sent_some = True
-                    msg = BroadcastMessage(self.model, msgid=self.msgid,
-                                     history=new_history)
-                    self.log.info("ttl %d, passed on to %s" % (ttl, link))
-                    yield msg, msg.send(dst, link, ttl=ttl)
+                    log("passing on to %s (ttl %d)" % (link, ttl))
+                    msg = BroadcastMessage(self.model,
+                                           msgid=self.msgid,
+                                           history=new_history)
+                    msg.start(msg.send(dst, link, ttl=ttl))
                 else:
-                    self.log.info("ttl %d, %s in history, not passing on" % (ttl, link))
+                    log("ttl %d, %s in history, not passing on" % (ttl, link))
             if not sent_some:
-                self.log.info("message received everywhere before ttl expired")
+                log("message received everywhere before ttl expired")
         else:
-            self.log.info("TTL expired")
-
-    def init(self, *a, **kw):
-        self.ttl = kw.pop('ttl', 3)
-        super(BroadcastMessage, self).init(*a, **kw)
+            log("TTL expired")
 
 
-
+#class Shout(Message):
+#    def process(self, src, dst, log, quote, **kw):
+#
+#        if quote.bid:
+#            ask = dst.seller.consider(quote)
+#            if ask:
+#                shout = Shout(self.model)
