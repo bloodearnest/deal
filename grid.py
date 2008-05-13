@@ -80,8 +80,8 @@ class Job(Process):
     _job_counter = itertools.count()
 
     def __init__(self, size, duration):
-        super(Job, self).__init__(self, "Job %d" % id)
-        self.id = _job_counter.next()
+        self.id = Job._job_counter.next()
+        super(Job, self).__init__("Job %d" % self.id)
         self.size = size
         self.duration = duration
 
