@@ -47,4 +47,6 @@ def mean_server_utilisation(model):
 def mean_queue_time(model):
     return list_mean(model.nodes, lambda x: x.server.mean_queue_wait)
 
+# supply/demand calculations
+
 
