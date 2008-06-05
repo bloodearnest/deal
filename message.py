@@ -3,7 +3,6 @@ from trace import Tracer
 
 from SimPy.Simulation import *
 
-from util import LogProxy
 
 _msg_counter = itertools.count()
 
@@ -56,7 +55,7 @@ class Message(Process):
         if trace: trace("processing")
 
         # do our work
-        if trace: self.process(src, dst, trace, **kw)
+        self.process(src, dst, trace, **kw)
 
         # release the processor
         yield release, self, dst.server.processor
