@@ -1,38 +1,14 @@
-import math
-import operator
-
-def normalise_price(p):
-    # normalise to 2dp
-    return math.floor((p * 100)+ 0.5) / 100
+import random
+from market import normalise_price
 
 
-class Quote(object):
-    """A quote in the market"""
-    def __init__(self, bid, job, price):
-        self.job = job
-        self.bid = bid
-        self.ask = not bid
-        self.price = price
-        self.quantity = job.amount
+def Buyer(cls, *a, **kw):
+    return cls(True, *a, **kw)
 
+def Seller(cls, *a, **kw):
+    return cls(False, *a, **kw)
 
-def Bid(job, price):
-    """Factory for a Bid quote"""
-    return Quote(True, job, price)
-
-def Ask(job, price):
-    """Factory for an Ask quote"""
-    return Quote(False, job, price)
-
-class Trade(object):
-    """Record of a trade"""
-    def __init__(self, buyer, seller, price, quote, time):
-        pass
-
-class MarketRules(object):
-    pass
-
-class Trader(object):
+class Rationale(object):
     def __init__(self, buyer, limit, rules):
         self.buyer = buyer
         self.seller = not buyer
@@ -45,27 +21,21 @@ class Trader(object):
         self.buyer_range = (self.market.min, limit)
 
     # stub methods
-    def observe(self, quote):
+    def observe(self, quote, success):
         pass
 
-    def quote(self):
+    def quote(self, *a, **kw):
         pass
 
-# factory functions for traders
-def Buyer(cls, *a, **kw):
-    return cls(True, *a, **kw)
 
-def Seller(cls, *a, **kw):
-    return cls(False, *a, **kw)
+class ZIC(Rationale):
+    def quote(self, *a, **kw):
+        if self.buyer:
+            return random.randint(*self.buyer_range)
+        else:
+            return random.randint(*self.seller_range)
 
-
-# trader algorithms
-class ZIC(Trader):
-    def quote(self):
-        return random.randint(self.buyer and self.buyer_range 
-                                          or self.seller_range)
-
-class ZIP(Trader):
+class ZIP(Rationale):
     def __init__(self, *a, **kw):
 
         self.learning_rate = kw.pop('rate', 0.2)
@@ -81,12 +51,12 @@ class ZIP(Trader):
 
     @property
     def price(self):
-        return self.limit * (1 + self.profit)
+        return normalise_price(self.limit * (1 + self.profit))
         
-
     def update_profit(self, target):
         """Updates the profit margin using the Widrow-Hoff learning rule"""
-        change = self.coeff * (target - self.price) + self.momentum * self.last_change
+        change = (self.coeff * (target - self.price) +
+                  self.momentum * self.last_change)
         self.last_change = change
         new_profit = ((self.price + change) / self.limit) - 1.0
 
@@ -101,7 +71,7 @@ class ZIP(Trader):
         if self.buyer:
             quote_is_better = self.price >= quote.price 
             competing_quote = quote.bid 
-        else:
+        else: # seller
             quote_is_better = self.price <= quote.price
             competing_quote = quote.ask
 
@@ -120,12 +90,12 @@ class ZIP(Trader):
                 print "unsuccessful better competing quote: lower margin"
                 change = self.lower_margin
 
-        if (change != 0):
-            self.update_price(self.price * change)
+        if change != 0:
+            self.update_profit(self.price * change)
 
 
-    def quote(self):
-        pass
+    def quote(self, *a, **kw):
+        return self.price
 
 
 

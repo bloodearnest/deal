@@ -9,24 +9,27 @@ from messages import BroadcastMessage
 class GridModel(Model):
 
     def __init__(self,
-                 size,
-                 arrival=1,
+                 size=100,
+                 arrival_mean=1,
+                 arrival_dist = random.expovariate,
                  mean_degree=2,
-                 resource_size_means = dists.gamma(100),
-                 job_size_means = dists.gamma(20),
-                 job_duration_means = dists.gamma(100),
+                 resource_sizes = dists.gamma(100),
+                 job_sizes = dists.gamma(20),
+                 job_durations = dists.gamma(100),
                  service_means = dists.normal(1, 0.25),
                  service_dist = dists.gamma,
                  latency_means = dists.normal(1, 0.25),
                  latency_dist = dists.gamma,
                  topology = None,
-                 latencies = None):
+                 latencies = None,
+                 market=None):
 
-        super(GridModel, self).__init__(arrival)
-
+        self.inter_arrival_time = arrival_dist(arrival_mean)
+        self.job_sizes = job_sizes
+        self.job_durations = job_durations
         # defaults
         topology = topology or Topologies.random_by_degree(size, mean_degree);
-        latencies = latencies or Latencies.random(latency_means)
+        latencies = latencies or Latencies.random(latency_means, latency_dist)
 
         # generate network
         self.graph = generate_network(topology)
@@ -36,8 +39,13 @@ class GridModel(Model):
         # add model specific components
         for node in self.graph.nodes_iter():
             node.server = Server(node, service_dist(service_means()))
-            node.resource = GridResource(node, int(resource_size_means()))
+            node.resource = GridResource(node, int(resource_sizes()))
             node.seller = None
+            node.buyers = set()
+
+        if market:
+            market(self.graph)
+
 
     @property
     def nodes(self):
@@ -50,4 +58,13 @@ class GridModel(Model):
         dst = self.random_node()
         msg = BroadcastMessage(self)
         return msg, msg.send(None, dst, ttl=2)
+
+    def new_job(self):
+        return Job(self.job_sizes(), self.job_durations())
+
+    def start(self):
+        for n in self.graph.nodes_iter():
+            n.seller.start(n.seller.trade())
+        super(GridModel, self).start()
+
 

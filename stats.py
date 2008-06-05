@@ -36,6 +36,9 @@ class dists(object):
     def uniform_int(a, b):
         return lambda: randint(a, b)
 
+    @staticmethod
+    def constant(i):
+        return lambda: i
 
 # general stat calculation functions
 def list_mean(items, getter):

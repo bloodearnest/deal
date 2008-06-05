@@ -1,6 +1,6 @@
 import itertools
 from random import choice
-from SimPy.Simulation import Process, Resource, Tally
+from SimPy.Simulation import Process, Resource, Tally, hold
 
 from util import RingBuffer
 
@@ -40,12 +40,12 @@ class GridResource(object):
         self.util = Tally("Resource %d utilisation" % node.id)
 
     def can_allocate(self, job):
-        return job.size <= self.free()
+        return job.size <= self.free
 
     def start(self, job):
         assert self.can_allocate(job)
         self.jobs.add(job)
-        resource.util.observe(resource.used)
+        self.util.observe(self.used)
         # the job will complete and remove itself at the right time
         job.start(job.execute(self))
 
@@ -64,7 +64,7 @@ class GridResource(object):
 
     @property
     def free(self):
-        return self.size - self.used
+        return self.capacity - self.used
 
     @property
     def load(self):

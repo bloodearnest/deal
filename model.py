@@ -7,8 +7,6 @@ class DummyProcess(Process):
         yield hold, self, 1
 
 class Model(object):
-    def __init__(self, arrival=1):
-        self.inter_arrival_time = lambda: random.expovariate(1.0/arrival)
 
     class Generator(Process):
         def generate(self, model):
