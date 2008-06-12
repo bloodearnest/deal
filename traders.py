@@ -63,7 +63,7 @@ class ZIP(Rationale):
         if self.buyer: 
             self.profit = new_profit < 0 and new_profit or 0
         else:
-            self.profit = new_profit > 1 and new_profit or 0
+            self.profit = new_profit > 0 and new_profit or 0
 
     def observe(self, quote, success):
         change = 0
@@ -78,16 +78,16 @@ class ZIP(Rationale):
         if success: # trade was succesful
             # if our price is worse than this, increase margin
             if quote_is_better:
-                print "successful better quote: raise margin"
+                #print "successful better quote: raise margin"
                 change = self.raise_margin
             # if it's a quote we would not have won, lower margin
             elif not competing_quote:
-                print "successful worse quote: lower margin"
+                #print "successful worse quote: lower margin"
                 change = self.lower_margin
         else: # no deal
             # if it's a competing quote and we're worse, lower margin
             if competing_quote and quote_is_better:
-                print "unsuccessful better competing quote: lower margin"
+                #print "unsuccessful better competing quote: lower margin"
                 change = self.lower_margin
 
         if change != 0:
