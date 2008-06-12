@@ -51,7 +51,9 @@ class GridResource(object):
 
     def cancel(self, job):
         self.remove(job)
-        job.cancel() # cancel previously scheduled finish event
+        # cancel previously scheduled finish event, w/SimPy work arround
+        canceller = Process()
+        canceller.cancel(job)
 
     def remove(self, job):
         assert job in self.jobs
