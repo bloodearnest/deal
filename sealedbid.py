@@ -5,7 +5,7 @@ from market import Quote, Ask, Bid, MarketRules
 from traders import ZIC, ZIP
 from stats import dists
 from trace import Tracer
-
+import record
 
 class MessageWithQuote(Message):
     def __init__(self, quote, *a, **kw):
@@ -55,68 +55,67 @@ class Cancel(MessageWithQuote):
 
 
 class Buyer(Process):
-    pass
+    @property
+    def limit(self):
+        return self.rationale.limit
 
 class Seller(Process):
-    pass
+    @property
+    def limit(self):
+        return self.rationale.limit
 
 class SBBuyer(Buyer):
-    def __init__(self, id, node, timeout):
+    def __init__(self, id, node, timeout, rationale):
         super(SBBuyer, self).__init__("SBBuyer %d" % id)
         self.id = id
         self.node = node
         self.timeout = timeout
-        self.quotes = []
+        self.rationale = rationale
+        self.valid_quotes = []
+        self.invalid_quotes = []
 
-    @property
-    def valid_quotes(self):
-        return (q for q in self.quotes if q.price < self.rational.limit)
-
-    # signalling methods
-    def receive_quote(self, quote):
-        self.quotes.append(quote)
-
-    def confirm(self, quote):
-        self.confirmed = quote
- 
-    def reject(self, quote):
-        self.rejected = quote
 
     def trade(self, job):
+        """The Buyers PEM"""
         self.trace = trace = Tracer(self.node).add('sbb%-5d' % self.id).add('j%-5d' % job.id)
 
         adverts = 0
+
+        # initial advert and quote
+        # TODO: add a initial buyer quoted price?
         quote = Bid(self, None, job, None)
         advert = Advert(quote)
-        self.confirmed = False
-        self.rejected = False
+
         if trace:
             trace("new buyer shouting to %d nodes" % len(self.node.neighbors))
         self.node.shout_msg(advert)
 
-        # fixed timeout - we always want to wait this long
+        # fixed timeout - we should always want to wait this long
         yield hold, self, self.timeout 
         if trace:
             trace("buyer timed out")
 
+        # store quotes that have timed out
         timedout = []
-        while self.quotes:
+
+        while self.valid_quotes: # list of valid
             self.rejected = self.confirmed = False
 
-            # resort as we may have got other quotes
-            self.quotes.sort(key=lambda q: q.price)
+            # sort quotes (we may have got other quotes in the mean time)
+            self.valid_quotes.sort(key=lambda q: q.price)
             if trace:
                 trace("have %d quotes" % len(self.quotes))
 
-            self.quote = self.quotes.pop(0) # cheapest quote
+            self.quote = self.valid_quotes.pop(0) # cheapest quote
 
+            # accept the cheapest quote
             accept = Accept(self.quote)
             accept.send_msg(self.node, self.quote.seller.node)
             if trace:
                 trace("accepting best ask: %s" % self.quote.str(self))
 
+            # store our maximum time out
             target_time = now() + self.timeout
-            next_quote = False
 
             while self.quote: # quote still valid
 
@@ -127,8 +126,10 @@ class SBBuyer(Buyer):
                     if self.confirmed == self.quote: # current quote confirmed
                         if trace: 
                             trace("accept confirmed")
-                        #self.record_trade(self.confirmed)
+                        record.trade(self.confirmed, True)
+
                         raise StopIteration # we are done!
+
                     elif self.confirmed in timedout: # old quote confirms
                         if trace:
                             trace("got confirm from timed out quote")
@@ -161,12 +162,36 @@ class SBBuyer(Buyer):
                     timedout.append(self.quote)
                     self.quote = None
 
-        if trace: trace("run out of quotes")
+        if trace: trace("run out of valid quotes")
+        
         #TODO: report failure
+        record.trade(quote, False)
+
         raise StopIteration
+
+    # signalling methods called by messages
+
+    def receive_quote(self, quote):
+        if quote.price <= self.rationale.limit:
+            self.valid_quotes.append(quote)
+        else:
+            self.invalid_quotes.append(quote)
+
+    # called by confirm message
+    def confirm(self, quote):
+        """Mark a quote as confirmed. The caller should then reactivate this
+        Buyer process. Messy."""
+        self.confirmed = quote
+ 
+    # called by reject message
+    def reject(self, quote):
+        """Mark a quote as rejected. The caller should then reactivate this
+        Buyer process. Messy."""
+        self.rejected = quote
 
     def __str__(self):
         return "SBBuyer %d" % self.id
+
 
 class SBSeller(Seller):
 
@@ -195,10 +220,13 @@ class SBSeller(Seller):
                     trace("advert from %s at %s" % (ad.buyer, ad.buyer.node))
                 if job not in self.active_trades:
                     if self.resource.can_allocate(job):
+
+                        # generate a quote and send it
                         price = self.rationale.quote()
                         quote = Ask(ad.buyer, self, job, price)
                         private = PrivateQuote(quote)
                         private.send_msg(self.node, quote.buyer.node)
+                        
                         self.quoted_jobs.add(job.id)
                         if trace:
                             trace("sending offer %s" % quote)
@@ -215,16 +243,24 @@ class SBSeller(Seller):
                         trace("WARNING: received advert for job already trading for")
             else:
                 if self.trace:
-                    self.trace("WARNING: woken up for unkown reason")
+                    self.trace("WARNING: woken up for unkown reason, no advert")
             self.advert = None
                             
 
     # signalling methods
+
+    # called by Advert
     def receive_advert(self, quote):
         self.advert = quote
 
+    # Called by Accept
     def accept(self, quote):
         trace = self.trace.add('j%-5s' % quote.job.id)
+
+        # record sucessful quote
+        self.rationale.observe(quote, True)
+
+        # manage quote
         if quote.job in self.active_trades:
             p = self.active_trades[quote.job]
             p.receive_accept(quote)
@@ -235,6 +271,7 @@ class SBSeller(Seller):
         elif trace:
             trace("WARNING: got an accept for a job we didn't quote on")
 
+    # Called by cancel
     def cancel(self, quote):
         trace = self.trace.add('j%-5s' % quote.job.id)
         if quote.job in self.active_trades:
@@ -243,10 +280,10 @@ class SBSeller(Seller):
             reactivate(p)
         elif quote.job in self.resource.jobs:
             self.node.resource.cancel(quote.job)
-            trace("Got cancel for job already started, cancelling")
+            if trace: trace("Got cancel for job already started, cancelling")
             #TODO: calculate wasted time?
         elif quote.job.id in self.quoted_jobs:
-            trace("got a cancel for a timed out job")
+            if trace: trace("got a cancel for a timed out job")
         elif trace: 
             trace("WARNING: got a cancel for a unknown job")
 
@@ -264,7 +301,12 @@ class SBSeller(Seller):
 
             if self.accept: # we've received an accept
                 assert self.accept == quote
-                if seller.resource.can_allocate(quote.job): # can we still do it?
+
+                # record successful quote
+                seller.rationale.observe(quote, True)
+                
+                # can we still do it?
+                if seller.resource.can_allocate(quote.job): 
                     if trace:
                         trace("got accept, sending confirm")
                     confirm = Confirm(quote)
@@ -284,12 +326,16 @@ class SBSeller(Seller):
                     trace("got pre-timeout cancel, terminating job and bidding")
                     seller.resource.cancel(quote.job)
                 else:
-                    trace("got cancel before we got an accept!")
+                    trace("WARNING: got cancel before we got an accept!")
                     # SimPy work around
                     #canceller = Process()
                     #canceller.cancel(self)
 
             else: # we've timed out
+
+                #record unsucessful quote
+                seller.rationale.observe(quote, False)
+
                 if trace:
                     trace("timed out waiting for response to offer")
 
@@ -303,20 +349,25 @@ class SBSeller(Seller):
 
 
 
-def setup(graph):
-    rules = MarketRules()
-    rules.min = 1
-    rules.max = 1000
-    limits = dists.uniform(50, 150)
-    for n in graph.nodes_iter():
-        n.seller = SBSeller(n.id, n, 120, ZIC(False, int(limits()), rules))
+slimits = dists.uniform(1.00, 4.00)
+blimits = dists.constant(3.00)
+rules = MarketRules()
+rules.min = 0.01
+rules.max = 10.00
+trader = ZIC
 
+def setup(graph):
+    for n in graph.nodes_iter():
+        r = trader(False, slimits(), rules)
+        n.seller = SBSeller(n.id, n, 60, r, rules)
 
 class SBModel(GridModel):
     def new_process(self):
+        #x = sum(n.seller.rationale.quote() for n in self.nodes)
+        #print x / float(self.graph.size())
         dst = self.random_node()
         job = self.new_job()
-        buyer = SBBuyer(job.id, dst, 10)
+        r = trader(True, blimits(), rules)
         dst.buyers.add(buyer)
         return buyer, buyer.trade(job)
 

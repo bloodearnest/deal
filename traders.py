@@ -30,24 +30,28 @@ class Rationale(object):
 
 class ZIC(Rationale):
     def quote(self, *a, **kw):
+        lower = upper = None
         if self.buyer:
-            return random.randint(*self.buyer_range)
+            lower, upper = self.buyer_range
         else:
-            return random.randint(*self.seller_range)
+            lower, upper = self.seller_range
+
+        r = random.random()
+        return r * (upper - lower) + lower
 
 class ZIP(Rationale):
     def __init__(self, *a, **kw):
 
         self.learning_rate = kw.pop('rate', 0.2)
-        self.momentum = kw.pop('momentum', 0.3)
+        self.momentum = kw.pop('momentum', 0.6)
         self.coeff = (1.0 - self.momentum) * self.learning_rate
         
         super(ZIP, self).__init__(*a, **kw)
 
         self.last_change = 0;
         self.profit = self.buyer and -0.1 or 0.1
-        self.lower_margin = self.buyer and 1.1 or 0.9
-        self.raise_margin = self.buyer and 0.9 or 1.1
+        self.lower_margin = self.buyer and 1.2 or 0.8
+        self.raise_margin = self.buyer and 0.8 or 1.2
 
     @property
     def price(self):

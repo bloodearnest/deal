@@ -14,7 +14,7 @@ class Quote(object):
         self.ask = not bid
         self.price = price
         self.job = job
-        self.quantity = job.amount
+        self.quantity = job.quantity
 
     def __eq__(self, other):
         return (self.price == other.price and

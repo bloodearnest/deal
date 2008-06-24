@@ -92,7 +92,8 @@ class Job(Process):
         resource.remove(self)
 
 
-    def amount(self):
+    @property
+    def quantity(self):
         return self.size * self.duration
 
 
