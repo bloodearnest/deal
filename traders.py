@@ -23,8 +23,8 @@ class Rationale(object):
 
 class ZIC(Rationale):
     def quote(self, *a, **kw):
-        return random.randint(self.buyer and self.buyer_range 
-                                          or self.seller_range)
+        return random.randint(*(self.buyer and self.buyer_range 
+                                          or self.seller_range))
         #lower = upper = None
         #if self.buyer:
         #    lower, upper = self.buyer_range

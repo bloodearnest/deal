@@ -8,14 +8,14 @@ from stats import dists
 from buyer import SBBuyer
 from seller import SBSeller
 
-slimits = dists.uniform(0.20, 3.00)
+slimits = dists.uniform_int(20, 400)
 #slimits = dists.constant(2.5)
-blimits = dists.uniform(3.00, 5.00)
+blimits = dists.uniform(200, 500)
 #blimits = dists.constant(2.5)
 rules = MarketRules()
-rules.min = 0.01
-rules.max = 10.00
-trader = ZIP
+rules.min = 1
+rules.max = 1000
+trader = ZIC
 
 def setup(graph):
     for n in graph.nodes_iter():
