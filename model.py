@@ -1,5 +1,5 @@
 import random
-from SimPy.Simulation import *
+from SimPy.Simulation import initialize, simulate, hold, Process
 
 class DummyProcess(Process):
     """A process that does nothing for one second"""
@@ -11,17 +11,20 @@ class Model(object):
     class Generator(Process):
         def generate(self, model):
             while 1:
-                activate(*model.new_process())
+                model.new_process()
                 yield hold, self, model.inter_arrival_time()
+    
+    def setup():
+        pass
 
     def start(self):
         g = self.Generator('generator')
-        activate(g, g.generate(self))
+        g.start(g.generate(self))
 
     def new_process(self):
         """Generates new process entering the system"""
         p = DummyProcess("dummy process")
-        return p, p.pem()
+        p.start(p.pem())
 
     def run(self, *a, **kw):
         initialize()

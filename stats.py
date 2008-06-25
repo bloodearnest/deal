@@ -20,6 +20,12 @@ class dists(object):
         return norm
 
     @staticmethod
+    def normal_int(mean, sigma=None):
+        norm = dists.normal(mean, sigma)
+        return lambda : int(norm())
+
+
+    @staticmethod
     def expon(mean):
         lmda = 1.0/mean
         return lambda: expovariate(lmda)

@@ -143,8 +143,23 @@ def report():
     real = equilibrium(buys, sells, "real")
     theory = equilibrium(buys_theory, sells_theory, "theory")
     pylab.savefig("eq.png")
+
+    xs = []
+    ys = []
+    from itertools import izip
+    iter = izip(trade_times, trade_prices)
+    t, p = iter.next()
+    for i in range(0, int(max(trade_times)), 50):
+        s = []
+        while t < i:
+            s.append(p)
+            t, p = iter.next()
+        if s:
+            xs.append(i)
+            ys.append(sum(s)/float(len(s)))
+
     pylab.clf()
-    pylab.plot(trade_times, trade_prices)
+    pylab.plot(xs, ys)
     pylab.savefig("trades.png")
 
 

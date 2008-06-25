@@ -8,7 +8,7 @@ import itertools
 import trace
 trace.enabled = False
 
-from sealedbid.model import SBModel, setup
+from sealedbid.model import SBModel
 
 test_kws = dict(
         size=1000,
@@ -18,13 +18,12 @@ test_kws = dict(
         latency_means=dists.gamma(0.2),
         latency_dist=dists.gamma,
         #topology=Topologies.test_network,
-        market=setup
         )
 
 model = SBModel(**test_kws)
 
 
-model.run(until=200)
+model.run(until=500)
 
 import stats
 import record

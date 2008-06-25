@@ -21,8 +21,7 @@ class GridModel(Model):
                  latency_means = dists.normal(1, 0.25),
                  latency_dist = dists.gamma,
                  topology = None,
-                 latencies = None,
-                 market=None):
+                 latencies = None):
 
         self.inter_arrival_time = arrival_dist(arrival_mean)
         self.job_sizes = job_sizes
@@ -43,8 +42,7 @@ class GridModel(Model):
             node.seller = None
             node.buyers = set()
 
-        if market:
-            market(self.graph)
+        self.setup()
 
 
     @property
@@ -54,10 +52,14 @@ class GridModel(Model):
     def random_node(self):
         return random.choice(self.nodes)
 
+    def new_buyer(self, job, node):
+        m = BroadcastMessage()
+        m.send_msg(None, dst)
+
     def new_process(self):
         dst = self.random_node()
-        msg = BroadcastMessage(self)
-        return msg, msg.send(None, dst, ttl=2)
+        job = self.new_job()
+        self.new_buyer(job, dst)
 
     def new_job(self):
         return Job(self.job_sizes(), self.job_durations())
