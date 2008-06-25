@@ -1,13 +1,6 @@
 import random
 from market import normalise_price
 
-
-def Buyer(cls, *a, **kw):
-    return cls(True, *a, **kw)
-
-def Seller(cls, *a, **kw):
-    return cls(False, *a, **kw)
-
 class Rationale(object):
     def __init__(self, buyer, limit, rules):
         self.buyer = buyer
@@ -43,7 +36,7 @@ class ZIP(Rationale):
     def __init__(self, *a, **kw):
 
         self.learning_rate = kw.pop('rate', 0.2)
-        self.momentum = kw.pop('momentum', 0.6)
+        self.momentum = kw.pop('momentum', 0.3)
         self.coeff = (1.0 - self.momentum) * self.learning_rate
         
         super(ZIP, self).__init__(*a, **kw)

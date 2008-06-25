@@ -3,7 +3,6 @@ from trace import Tracer
 
 from SimPy.Simulation import *
 
-
 _msg_counter = itertools.count()
 
 class Message(Process):
@@ -69,3 +68,9 @@ class Message(Process):
 
     #def __del__(self):
     #    self.log("collected")
+
+
+class MessageWithQuote(Message):
+    def __init__(self, quote, *a, **kw):
+        super(MessageWithQuote, self).__init__(*a, **kw)
+        self.quote = quote

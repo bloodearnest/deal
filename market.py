@@ -1,4 +1,5 @@
 import math
+from SimPy.Simulation import Process
 
 def normalise_price(p):
     """normalise to 2dp"""
@@ -46,3 +47,12 @@ class MarketRules(object):
     pass
 
 
+class Buyer(Process):
+    @property
+    def limit(self):
+        return self.rationale.limit
+
+class Seller(Process):
+    @property
+    def limit(self):
+        return self.rationale.limit

@@ -4,7 +4,7 @@ from networks import Node, generate_network, Topologies, Latencies
 from grid import Server, GridResource, Job
 from stats import dists
 
-from messages import BroadcastMessage
+#from messages import BroadcastMessage
 
 class GridModel(Model):
 

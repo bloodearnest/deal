@@ -6,16 +6,25 @@ buys = []
 buys_theory = []
 sells = []
 sells_theory = []
+trade_times = []
+trade_prices = []
 
 failed = []
 
-def trade(quote, success):
+def record_trade(quote, success):
     t = now()
     if success:
         trade = (quote.price, quote.quantity, t)
-        #print quote.price, quote.seller.limit, quote.buyer.limit 
+        trade_times.append(t)
+        trade_prices.append(quote.price)
+
+
         buys.append(trade)
         sells.append(trade)
+
+        buys_theory.append((quote.buyer.limit, quote.quantity, t))
+        sells_theory.append((quote.seller.limit, quote.quantity, t))
+
 
     else:
         failed.append((quote.buyer.limit, quote.job.size))
@@ -29,6 +38,7 @@ def equilibrium(buys, sells, name):
     eq_time = 0
     surplus = 0
 
+    # draw time graph
     buys.sort()
     sells.sort()
     buys.reverse()
@@ -120,20 +130,25 @@ def equilibrium(buys, sells, name):
 
         ms = min(len(xs), len(sy))
         md = min(len(xs), len(dy))
-        pylab.clf()
+        print "plotting", name
         pylab.plot(xs[:ms], sy[:ms])
         pylab.plot(xs[:md], dy[:md])
-        pylab.savefig(name)
 
     return eq_price, surplus, eq_time
 
 
 
 def report():
-    real = equilibrium(buys, sells, "real.png")
-    theory = equilibrium(buys_theory, sells_theory, "theory.png")
+    
+    real = equilibrium(buys, sells, "real")
+    theory = equilibrium(buys_theory, sells_theory, "theory")
+    pylab.savefig("eq.png")
+    pylab.clf()
+    pylab.plot(trade_times, trade_prices)
+    pylab.savefig("trades.png")
 
-    alpha = real[0] / theory[0]
+
+    #alpha = real[0] / theory[0]
     eff = real[1] / theory[1] * 100
 
     print "efficiency: %.2f%%" % eff
