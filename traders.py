@@ -23,14 +23,15 @@ class Rationale(object):
 
 class ZIC(Rationale):
     def quote(self, *a, **kw):
-        lower = upper = None
-        if self.buyer:
-            lower, upper = self.buyer_range
-        else:
-            lower, upper = self.seller_range
-
-        r = random.random()
-        return r * (upper - lower) + lower
+        return random.randint(self.buyer and self.buyer_range 
+                                          or self.seller_range)
+        #lower = upper = None
+        #if self.buyer:
+        #    lower, upper = self.buyer_range
+        #else:
+        #    lower, upper = self.seller_range
+        #r = random.random()
+        #return r * (upper - lower) + lower
 
 class ZIP(Rationale):
     def __init__(self, *a, **kw):
@@ -42,25 +43,18 @@ class ZIP(Rationale):
         super(ZIP, self).__init__(*a, **kw)
 
         self.last_change = 0;
-        self.profit = self.buyer and -0.1 or 0.1
-        self.lower_margin = self.buyer and 1.2 or 0.8
-        self.raise_margin = self.buyer and 0.8 or 1.2
+        self.price = self.limit * (self.buyer and 0.9 or 1.1)
+        self.lower_margin = self.buyer and 1.1 or 0.9
+        self.raise_margin = self.buyer and 0.9 or 1.1
 
-    @property
-    def price(self):
-        return normalise_price(self.limit * (1 + self.profit))
-        
-    def update_profit(self, target):
-        """Updates the profit margin using the Widrow-Hoff learning rule"""
+    def update(self, target):
+        """Updates the price using the Widrow-Hoff learning rule"""
         change = (self.coeff * (target - self.price) +
                   self.momentum * self.last_change)
         self.last_change = change
-        new_profit = ((self.price + change) / self.limit) - 1.0
-
-        if self.buyer: 
-            self.profit = new_profit < 0 and new_profit or 0
-        else:
-            self.profit = new_profit > 0 and new_profit or 0
+        
+        limiter = self.buyer and min or max
+        self.price = int(limiter(self.price + change, self.limit))
 
     def observe(self, quote, success):
         change = 0
@@ -83,12 +77,12 @@ class ZIP(Rationale):
                 change = self.lower_margin
         else: # no deal
             # if it's a competing quote and we're worse, lower margin
-            if competing_quote and quote_is_better:
+            if competing_quote and not quote_is_better:
                 #print "unsuccessful better competing quote: lower margin"
                 change = self.lower_margin
 
         if change != 0:
-            self.update_profit(self.price * change)
+            self.update(quote.price * change)
 
 
     def quote(self, *a, **kw):
