@@ -24,7 +24,7 @@ test_kws = dict(
 model = SBModel(**test_kws)
 
 
-model.run(until=500)
+model.run(until=200)
 
 import stats
 import record

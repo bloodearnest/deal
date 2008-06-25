@@ -7,7 +7,6 @@ class Advert(MessageWithQuote):
         if trace:
             trace("signalling seller that advert has arrived")
         dst.seller.receive_advert(self.quote)
-        reactivate(dst.seller)
 
 class PrivateQuote(MessageWithQuote):
     """quote sent to buyer"""
@@ -28,14 +27,12 @@ class Reject(MessageWithQuote):
     def process(self, src, dst, trace, **kw):
         dst.confirm_buyer(self.quote.buyer)
         self.quote.buyer.reject(self.quote)
-        reactivate(self.quote.buyer)
 
 class Confirm(MessageWithQuote):
     """Confirmation of acceptance, sent to buyer"""
     def process(self, src, dst, trace, **kw):
         dst.confirm_buyer(self.quote.buyer)
         self.quote.buyer.confirm(self.quote)
-        reactivate(self.quote.buyer)
 
 class Cancel(MessageWithQuote):
     """Cancellation of previous accept message, sent to seller"""

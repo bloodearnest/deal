@@ -1,4 +1,5 @@
 from SimPy.Simulation import activate, reactivate, now, hold
+from util import reactivate_on_call
 from market import Bid,  Buyer
 from trace import Tracer
 from record import record_trade
@@ -119,15 +120,15 @@ class SBBuyer(Buyer):
             self.invalid_quotes.append(quote)
 
     # called by confirm message
+    @reactivate_on_call
     def confirm(self, quote):
-        """Mark a quote as confirmed. The caller should then reactivate this
-        Buyer process. Messy."""
+        """Mark a quote as confirmed and reactivate"""
         self.confirmed = quote
  
     # called by reject message
+    @reactivate_on_call
     def reject(self, quote):
-        """Mark a quote as rejected. The caller should then reactivate this
-        Buyer process. Messy."""
+        """Mark a quote as rejected acn reactivate"""
         self.rejected = quote
 
     def __str__(self):

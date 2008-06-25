@@ -1,22 +1,13 @@
 import logging
+from SimPy.Simulation import reactivate
 
 sortedtuple = lambda *x: tuple(sorted(x))
 
-class LogProxy(object):
-    log_methods = frozenset(('debug', 'info', 'warning', 'critical', 'error'))
-
-    def __init__(self, obj):
-        self.logger = logging.getLogger('trace')
-        self.kw = dict(object=str(obj))
-
-    def __getattr__(self, attr):
-        if attr in self.log_methods:
-            def proxy_func(*a, **kw):
-                kw['extra'] = self.kw
-                return getattr(self.logger, attr)(*a, **kw)
-            return proxy_func
-        else:
-            return getattr(self.logger, attr)
+def reactivate_on_call(func):
+    def entangle(cls, *a, **kw):
+        func(cls, *a, **kw)
+        reactivate(cls)
+    return entangle
 
 
 class RingBuffer(list):

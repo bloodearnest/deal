@@ -1,8 +1,9 @@
 from SimPy.Simulation import activate, hold, passivate, reactivate, now, Process
+from util import reactivate_on_call
 from market import Ask,  Seller
 from trace import Tracer
-
 from messages import *
+
 
 class SBSeller(Seller):
 
@@ -61,6 +62,7 @@ class SBSeller(Seller):
     # signalling methods
 
     # called by Advert
+    @reactivate_on_call
     def receive_advert(self, quote):
         self.advert = quote
 
@@ -75,7 +77,6 @@ class SBSeller(Seller):
         if quote.job in self.active_trades:
             p = self.active_trades[quote.job]
             p.receive_accept(quote)
-            reactivate(p)
         elif quote.job.id in self.quoted_jobs:
             if trace:
                 trace("got an accept for a job we've timed out on")
@@ -88,7 +89,6 @@ class SBSeller(Seller):
         if quote.job in self.active_trades:
             p = self.active_trades[quote.job]
             p.receive_cancel(quote)
-            reactivate(p)
         elif quote.job in self.resource.jobs:
             self.node.resource.cancel(quote.job)
             if trace: trace("Got cancel for job already started, cancelling")
@@ -153,9 +153,11 @@ class SBSeller(Seller):
 
             del seller.active_trades[job]
 
+        @reactivate_on_call
         def receive_accept(self, quote):
             self.accept = quote
 
+        @reactivate_on_call
         def receive_cancel(self, quote):
             self.cancel = quote
 
