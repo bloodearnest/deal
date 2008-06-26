@@ -2,7 +2,7 @@ from SimPy.Simulation import activate, reactivate, now, hold
 from util import reactivate_on_call
 from market import Bid,  Buyer
 from trace import Tracer
-from record import record_trade
+import record
 
 from messages import *
 
@@ -15,6 +15,7 @@ class SBBuyer(Buyer):
         self.rationale = rationale
         self.valid_quotes = []
         self.invalid_quotes = []
+        self.have_received_quote = False
 
 
     def trade(self, job):
@@ -30,12 +31,19 @@ class SBBuyer(Buyer):
 
         if trace:
             trace("new buyer shouting to %d nodes" % len(self.node.neighbors))
-        self.node.shout_msg(advert, ttl=1)
+        self.node.shout_msg(advert, ttl=2)
 
-        # fixed timeout - we should always want to wait this long
+        tstart = now()
         yield hold, self, self.timeout 
+        while self.have_received_quote:
+            self.have_received_quote = False
+            if trace:
+                trace("buyer time out reset")
+            yield hold, self, self.timeout
+            
         if trace:
             trace("buyer timed out")
+        record.buyer_timeouts.observe(now() - tstart)
 
         # store quotes that have timed out
         timedout = []
@@ -68,7 +76,7 @@ class SBBuyer(Buyer):
                     if self.confirmed == self.quote: # current quote confirmed
                         if trace: 
                             trace("accept confirmed")
-                        record_trade(self.confirmed, True)
+                        record.record_trade(self.confirmed, True)
 
                         raise StopIteration # we are done!
 
@@ -107,17 +115,20 @@ class SBBuyer(Buyer):
         if trace: trace("run out of valid quotes")
         
         #TODO: report failure
-        record_trade(quote, False)
+        record.record_trade(quote, False)
 
         raise StopIteration
 
     # signalling methods called by messages
 
+    # called by PrivateQuote
+    @reactivate_on_call
     def receive_quote(self, quote):
         if quote.price <= self.rationale.limit:
             self.valid_quotes.append(quote)
         else:
             self.invalid_quotes.append(quote)
+        self.have_received_quote = True
 
     # called by confirm message
     @reactivate_on_call

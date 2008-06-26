@@ -23,7 +23,7 @@ class SBModel(GridModel):
         #x = sum(n.seller.rationale.quote() for n in self.nodes)
         #print int(x / float(self.graph.size()))
         r = trader(True, blimits(), rules)
-        buyer = SBBuyer(job.id, dst, 12, r)
+        buyer = SBBuyer(job.id, dst, 5, r)
         dst.buyers.add(buyer)
         buyer.start(buyer.trade(job))
 

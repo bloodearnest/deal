@@ -44,6 +44,7 @@ class GridModel(Model):
             node.seller = None
             node.buyers = set()
 
+        # do model specific setup
         self.setup()
 
 

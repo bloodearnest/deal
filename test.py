@@ -6,7 +6,7 @@ from stats import dists
 from networks import Topologies
 import itertools
 import trace
-trace.enabled = False
+#trace.enabled = False
 
 from sealedbid.model import SBModel
 
@@ -32,6 +32,7 @@ import record
 #print stats.mean_queue_time(model)
 
 record.report()
+print "avg buyer wait:", record.buyer_timeouts.mean()
 
                   
 

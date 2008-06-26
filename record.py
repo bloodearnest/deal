@@ -1,6 +1,7 @@
 import math
 import pylab
-from SimPy.Simulation import now
+from itertools import izip
+from SimPy.Simulation import now, Tally
 
 buys = []
 buys_theory = []
@@ -10,6 +11,7 @@ trade_times = []
 trade_prices = []
 
 failed = []
+buyer_timeouts = Tally("buyer_timeouts")
 
 def record_trade(quote, success):
     t = now()
@@ -133,6 +135,22 @@ def equilibrium(buys, sells, name):
 
     return eq_price, surplus, eq_time
 
+def smooth(x, y, n):
+    xs = []
+    ys = []
+    iter = izip(x, y)
+    t, p = iter.next()
+    m = int(max(x))
+    for i in range(0, m, m/n):
+        s = []
+        while t < i:
+            s.append(p)
+            t, p = iter.next()
+        if s:
+            xs.append(i)
+            ys.append(sum(s)/float(len(s)))
+    return xs, ys
+
 
 
 def report():
@@ -141,21 +159,7 @@ def report():
     theory = equilibrium(buys_theory, sells_theory, "theory")
     pylab.savefig("eq.png")
 
-    xs = []
-    ys = []
-    from itertools import izip
-    iter = izip(trade_times, trade_prices)
-    t, p = iter.next()
-    m = int(max(trade_times))
-    for i in range(0, m, m/20):
-        s = []
-        while t < i:
-            s.append(p)
-            t, p = iter.next()
-        if s:
-            xs.append(i)
-            ys.append(sum(s)/float(len(s)))
-
+    xs, ys = smooth(trade_times, trade_prices, 20)
     pylab.clf()
     pylab.plot(xs, ys)
     pylab.savefig("trades.png")
