@@ -134,7 +134,7 @@ class SBSeller(Seller):
             elif self.cancel: # we've received a cancel
                 assert self.cancel == quote
                 if quote.job in seller.resource.jobs:
-                    trace("got pre-timeout cancel, terminating job and bidding")
+                    trace and trace("got pre-timeout cancel, terminating job and bidding")
                     seller.resource.cancel(quote.job)
                 else:
                     if trace:

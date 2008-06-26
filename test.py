@@ -14,8 +14,8 @@ test_kws = dict(
         size=1000,
         arrival_mean=0.1,
         arrival_dist=dists.expon,
-        service_means=dists.gamma(0.2),
-        latency_means=dists.gamma(0.2),
+        service_means=dists.gamma(0.1),
+        latency_means=dists.gamma(0.1),
         latency_dist=dists.gamma,
         #topology=Topologies.test_network,
         )
@@ -23,7 +23,7 @@ test_kws = dict(
 model = SBModel(**test_kws)
 
 
-model.run(until=500)
+model.run(until=200)
 
 import stats
 import record

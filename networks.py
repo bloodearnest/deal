@@ -3,7 +3,7 @@ import random
 from itertools import izip, chain
 import networkx
 from networkx import generators, connected_components, Graph, XGraph
-
+from trace import Tracer
 from stats import dists, random_other
 
 MAX_NETGEN_ATTEMPTS = 5
@@ -19,11 +19,15 @@ class Node(object):
         return self.graph.neighbors(self)
 
     def generate_latency(self, other):
-        latency = self.graph.get_edge(self, other)
-        if latency:
+        if self.graph.has_edge(self, other):
+            latency = self.graph.get_edge(self, other)
             return latency()
+        elif hasattr(self.graph, "global_latency"):
+            return self.graph.global_latency()
         else:
-            raise StandardError("No links between %s and %s" % (self, other))
+            raise StandardError("no link and no global latency!")
+            
+            
 
     def confirm_buyer(self, buyer):
         if buyer not in self.buyers:
@@ -38,7 +42,9 @@ class Node(object):
     __repr__ = __str__
 
     def shout_msg(self, msg, *a, **kw):
-        ttl = kw.pop('ttl', 3)
+        ttl = kw.get('ttl', 3)
+        trace = Tracer(self).add('m%-7d' % msg.msgid)
+
         if ttl:
             # send copy of the same message on to all neighbours
             ttl -= 1
@@ -49,16 +55,18 @@ class Node(object):
             for dst in self.neighbors:
                 if dst not in old_history: # not already seen
                     sent_some = True
-                    #log("passing on to %s (ttl %d)" % (link, ttl))
+                    if trace:
+                        trace("passing on to %s (ttl %d)" % (dst, ttl))
                     # SimPy requires 1:1 Process:PEM, so we copy
-                    msg_copy = copy.copy(msg)
+                    #msg_copy = copy.copy(msg)
+                    msg_copy = msg.clone()
                     msg_copy.send_msg(self, dst, ttl=ttl)
                 else:
-                    pass#log("ttl %d, %s in history, not passing on" % (ttl, link))
+                    trace and trace("ttl %d, %s in history, not passing on" % (ttl, dst))
             if not sent_some:
-                pass#log("message received everywhere before ttl expired")
+                trace and trace("message received everywhere before ttl expired")
         else:
-            pass#log("TTL expired")
+            trace and trace("ttl expired")
 
 
 

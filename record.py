@@ -77,11 +77,8 @@ def equilibrium(buys, sells, name):
 
             # stats
             profit = (buy[PRICE] - sell[PRICE]) * quantity
-            bfinished = bindex + 1 == len(buys)
-            sfinished = sindex + 1 == len(sells)
 
             if not found:
-
                 if (sell[PRICE] > buy[PRICE]):
                     # we have crossed the equilibrium point
                     eq_price = (last_buy[PRICE] + last_sell[PRICE]) / 2.0
@@ -109,13 +106,13 @@ def equilibrium(buys, sells, name):
 
             # move along according to quantity
             if buy[QUANT] > sell[QUANT]:
-                buy = (buy[PRICE], buy[QUANT] - quantity, buy[TIME])
+                buy = (buy[PRICE], buy[QUANT] - sell[QUANT], buy[TIME])
                 sindex += 1
                 last_sell = sell
                 if sindex < len(sells):
                     sell = sells[sindex]
             elif buy[QUANT] < sell[QUANT]:
-                sell = (sell[PRICE], sell[QUANT] - quantity, sell[TIME])
+                sell = (sell[PRICE], sell[QUANT] - sell[QUANT], sell[TIME])
                 bindex += 1
                 last_buy = buy
                 if bindex < len(buys):
@@ -149,7 +146,8 @@ def report():
     from itertools import izip
     iter = izip(trade_times, trade_prices)
     t, p = iter.next()
-    for i in range(0, int(max(trade_times)), 50):
+    m = int(max(trade_times))
+    for i in range(0, m, m/20):
         s = []
         while t < i:
             s.append(p)
@@ -165,7 +163,8 @@ def report():
 
     #alpha = real[0] / theory[0]
     eff = real[1] / theory[1] * 100
-
+    print real
+    print theory
     print "efficiency: %.2f%%" % eff
 
 

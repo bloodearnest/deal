@@ -16,10 +16,11 @@ class GridModel(Model):
                  resource_sizes = dists.gamma(100),
                  job_sizes = dists.gamma(20),
                  job_durations = dists.gamma(100),
-                 service_means = dists.normal(1, 0.25),
+                 service_means = dists.normal(0.1),
                  service_dist = dists.gamma,
-                 latency_means = dists.normal(1, 0.25),
+                 latency_means = dists.normal(0.1),
                  latency_dist = dists.gamma,
+                 global_latency = dists.gamma(0.5),
                  topology = None,
                  latencies = None):
 
@@ -32,6 +33,7 @@ class GridModel(Model):
 
         # generate network
         self.graph = generate_network(topology)
+        self.graph.global_latency = global_latency
         # add latency weights to graph
         latencies(self.graph)
 

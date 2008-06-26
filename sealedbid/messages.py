@@ -1,9 +1,13 @@
 from SimPy.Simulation import reactivate
 from message import MessageWithQuote
 
+
 class Advert(MessageWithQuote):
     """Advert sent to seller"""
     def process(self, src, dst, trace, **kw):
+        ttl = kw.get('ttl', 3)
+        dst.shout_msg(self, ttl=ttl)
+
         if trace:
             trace("signalling seller that advert has arrived")
         dst.seller.receive_advert(self.quote)

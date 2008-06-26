@@ -1,4 +1,5 @@
 import itertools
+import copy
 from trace import Tracer
 
 from SimPy.Simulation import *
@@ -24,7 +25,7 @@ class Message(Process):
 
     def send(self, src, dst, **kw):
         self.history.add(dst)
-        trace = False #Tracer(dst).add('m%-5d' % self.msgid)
+        trace = Tracer(dst).add('m%-7d' % self.msgid)
 
         if src != None:
             latency = src.generate_latency(dst)
@@ -62,6 +63,13 @@ class Message(Process):
 
     def process(self, *a, **kw):
         pass
+
+    def clone(self):
+        # copy across all data
+        cp = copy.copy(self)
+        # reset SimPy machinery
+        Process.__init__(cp, name=self.name)
+        return cp
 
     def __str__(self):
         return "message %d" % self.msgid

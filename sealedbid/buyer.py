@@ -30,7 +30,7 @@ class SBBuyer(Buyer):
 
         if trace:
             trace("new buyer shouting to %d nodes" % len(self.node.neighbors))
-        self.node.shout_msg(advert)
+        self.node.shout_msg(advert, ttl=1)
 
         # fixed timeout - we should always want to wait this long
         yield hold, self, self.timeout 
@@ -46,7 +46,7 @@ class SBBuyer(Buyer):
             # sort quotes (we may have got other quotes in the mean time)
             self.valid_quotes.sort(key=lambda q: q.price)
             if trace:
-                trace("have %d quotes" % len(self.quotes))
+                trace("have %d quotes" % len(self.valid_quotes))
 
             self.quote = self.valid_quotes.pop(0) # cheapest quote
 
