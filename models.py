@@ -3,6 +3,7 @@ from model import Model
 from networks import Node, generate_network, Topologies, Latencies
 from grid import Server, GridResource, Job
 from stats import dists
+import record
 
 #from messages import BroadcastMessage
 
@@ -56,20 +57,25 @@ class GridModel(Model):
         return random.choice(self.nodes)
 
     def new_buyer(self, job, node):
-        m = BroadcastMessage()
-        m.send_msg(None, dst)
+        return None
 
     def new_process(self):
         dst = self.random_node()
         job = self.new_job()
-        self.new_buyer(job, dst)
+        buyer = self.new_buyer(job, dst)
+        record.buys_theory.append((buyer.limit, job.quantity, 0))
 
     def new_job(self):
         return Job(self.job_sizes(), self.job_durations())
 
-    def start(self):
+    def start(self, *a, **kw):
+        time = kw["until"]
         for n in self.graph.nodes_iter():
             n.seller.start(n.seller.trade())
-        super(GridModel, self).start()
+            record.sells_theory.append((n.seller.limit,
+                                        n.resource.capacity * time,
+                                        0))
+
+        super(GridModel, self).start(*a, **kw)
 
 

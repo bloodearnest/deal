@@ -19,15 +19,8 @@ def record_trade(quote, success):
         trade = (quote.price, quote.quantity, t)
         trade_times.append(t)
         trade_prices.append(quote.price)
-
-
         buys.append(trade)
         sells.append(trade)
-
-        buys_theory.append((quote.buyer.limit, quote.quantity, t))
-        sells_theory.append((quote.seller.limit, quote.quantity, t))
-
-
     else:
         failed.append((quote.buyer.limit, quote.job.size))
 
@@ -114,7 +107,7 @@ def equilibrium(buys, sells, name):
                 if sindex < len(sells):
                     sell = sells[sindex]
             elif buy[QUANT] < sell[QUANT]:
-                sell = (sell[PRICE], sell[QUANT] - sell[QUANT], sell[TIME])
+                sell = (sell[PRICE], sell[QUANT] - buy[QUANT], sell[TIME])
                 bindex += 1
                 last_buy = buy
                 if bindex < len(buys):

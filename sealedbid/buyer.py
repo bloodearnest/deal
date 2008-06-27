@@ -100,7 +100,7 @@ class SBBuyer(Buyer):
                         if trace: 
                             trace("accept rejected, but had already timed out")
                     elif trace:
-                        trace("WARNIG: got reject for unknown quote: %s" %
+                        trace("WARNING: got reject for unknown quote: %s" %
                                 self.rejected.str(self))
                     self.rejected = False
 

@@ -6,12 +6,12 @@ from stats import dists
 from networks import Topologies
 import itertools
 import trace
-#trace.enabled = False
+trace.enabled = False
 
 from sealedbid.model import SBModel
 
 test_kws = dict(
-        size=1000,
+        size=100,
         arrival_mean=0.1,
         arrival_dist=dists.expon,
         service_means=dists.gamma(0.1),

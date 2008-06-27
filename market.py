@@ -22,7 +22,7 @@ class Quote(object):
                 self.job == other.job)
 
     def __str__(self):
-        return 'q(%.2f, j%d)' % (self.price, self.job.id)
+        return 'q(%.2f, j%d)' % (self.price/100.0, self.job.id)
 
     def str(self, receiver):
         other = receiver == self.buyer and self.seller or self.buyer
