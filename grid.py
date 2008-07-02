@@ -45,7 +45,7 @@ class GridResource(object):
     def start(self, job):
         assert self.can_allocate(job)
         self.jobs.add(job)
-        self.util.observe(self.used)
+        self.util.observe(self.load)
         # the job will complete and remove itself at the right time
         job.start(job.execute(self))
 
@@ -58,7 +58,7 @@ class GridResource(object):
     def remove(self, job):
         assert job in self.jobs
         self.jobs.remove(job)
-        self.util.observe(self.used)
+        self.util.observe(self.load)
 
     @property
     def used(self):
@@ -70,7 +70,7 @@ class GridResource(object):
 
     @property
     def load(self):
-        return self.used / float(self.size)
+        return self.used / float(self.capacity)
 
     @property
     def utilisation(self):
