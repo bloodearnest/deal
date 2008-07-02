@@ -47,6 +47,7 @@ class SBBuyer(Buyer):
 
         # store quotes that have timed out
         timedout = []
+        rejected = []
 
         while self.valid_quotes: # list of valid
             self.rejected = self.confirmed = False
@@ -85,7 +86,7 @@ class SBBuyer(Buyer):
                             trace("got confirm from timed out quote")
                         # TODO: may want to go with this confirm instead, as it
                         # was probably better than the current one
-                    elif trace: # unknown confirm
+                    else: # unknown confirm
                         trace("WARNING: got random confirm: %s" 
                                 % self.confirmed.str(self))
                     self.confirmed = False
@@ -94,6 +95,7 @@ class SBBuyer(Buyer):
                     if self.rejected == self.quote: # current quote rejected
                         if trace:
                             trace("accept rejected, choosing next quote")
+                        rejected.append(self.quote)
                         self.quote = None
                     elif self.rejected in timedout:
                         # reject from quote already timed out
@@ -114,8 +116,10 @@ class SBBuyer(Buyer):
 
         if trace: trace("run out of valid quotes")
         
-        #TODO: report failure
-        record.record_trade(quote, False)
+        record.record_failure(quote, 
+                              len(self.invalid_quotes),
+                              len(timedout),
+                              len(rejected))
 
         raise StopIteration
 

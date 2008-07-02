@@ -11,8 +11,8 @@ class GridModel(Model):
 
     def __init__(self,
                  size=100,
-                 arrival_mean=1,
-                 arrival_dist = random.expovariate,
+                 load=0.5,
+                 arrival_dist = dists.expon,
                  mean_degree=2,
                  resource_sizes = dists.gamma(100),
                  job_sizes = dists.gamma(20),
@@ -21,19 +21,28 @@ class GridModel(Model):
                  service_dist = dists.gamma,
                  latency_means = dists.normal(0.1),
                  latency_dist = dists.gamma,
-                 global_latency = dists.gamma(0.5),
+                 global_latency = dists.gamma(0.1),
                  topology = None,
                  latencies = None):
 
+
+        # calculated results
+        duration = job_durations.mean;
+        total_resource_size = size * resource_sizes.mean;
+        max_jobs = total_resource_size / job_sizes.mean;
+        arrival_mean = duration / (max_jobs * load);
+        self.runtime = 3.0 * duration;
         self.inter_arrival_time = arrival_dist(arrival_mean)
+
         self.job_sizes = job_sizes
         self.job_durations = job_durations
+
         # defaults
         topology = topology or Topologies.random_by_degree(size, mean_degree);
         latencies = latencies or Latencies.random(latency_means, latency_dist)
 
         # generate network
-        self.graph = generate_network(topology)
+        self.graph = generate_network(topology, draw=True)
         self.graph.global_latency = global_latency
         # add latency weights to graph
         latencies(self.graph)

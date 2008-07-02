@@ -1,4 +1,5 @@
 import random
+from datetime import datetime, timedelta
 from SimPy.Simulation import initialize, simulate, hold, Process
 
 class DummyProcess(Process):
@@ -15,12 +16,20 @@ class Model(object):
                 yield hold, self, model.inter_arrival_time()
 
     class Progress(Process):
-        def report(self, time):
-            t = time / 20
+        def report(self, until):
+            start = datetime.now()
+            last = 0
+            t = until / 20
             x = 5
             while 1:
                 yield hold, self, t
-                print "%d%%" % x
+                now = datetime.now()
+                elapsed = now - start
+                guess = elapsed.seconds / float(x) * 100
+                eta = start + timedelta(seconds=guess)
+                print "[%s] %d%% [ETA: %s]" % (now.strftime('%H:%M:%S'),
+                                               x,
+                                               eta.strftime('%H:%M:%S'))
                 x += 5
 
     def setup():
@@ -39,6 +48,7 @@ class Model(object):
 
 
     def run(self, *a, **kw):
+        kw['until'] = kw.get('until', getattr(self, 'runtime', 100))
         initialize()      
         self.start(*a, **kw)
         simulate(*a, **kw)

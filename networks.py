@@ -5,6 +5,7 @@ import networkx
 from networkx import generators, connected_components, Graph, XGraph
 from trace import Tracer
 from stats import dists, random_other
+import draw as _draw
 
 MAX_NETGEN_ATTEMPTS = 5
 
@@ -70,9 +71,11 @@ class Node(object):
 
 
 
-def generate_network(generator, node_type=Node):
+def generate_network(generator, node_type=Node, draw=True):
     count = 0
     graph = generator()
+    if draw:
+        _draw.topology(graph)
     while len(networkx.connected_components(graph)) != 1:
         if count >= MAX_NETGEN_ATTEMPTS:
             raise StandardError("network with single giant component "
@@ -122,6 +125,21 @@ class Topologies(object):
         for a, b in izip(nodes, nodes[1:]):
             g.add_edge(a, b)
         return g
+
+    @staticmethod
+    def alltoall(n):
+        def gen():
+            g = networkx.Graph()
+            g.add_nodes_from(range(n))
+            nodes = g.nodes()
+            for n1 in nodes:
+                for n2 in nodes:
+                    if n2 > n1:
+                        g.add_edge(n1, n2)
+            return g
+        return gen
+
+    
 
 
         

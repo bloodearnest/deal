@@ -16,6 +16,7 @@ class SBSeller(Seller):
         self.active_trades = {}
         self.advert = None
         self.quoted_jobs = set()
+        self.cancelled_ids = set()
     
     @property
     def resource(self): return self.node.resource
@@ -51,11 +52,9 @@ class SBSeller(Seller):
                         if trace:
                             trace("resource has no room for job")
                 else:
-                    if trace: 
-                        trace("WARNING: received advert for job already trading for")
+                    trace("WARNING: received advert for job already trading for")
             else:
-                if self.trace:
-                    self.trace("WARNING: woken up for unkown reason, no advert")
+                self.trace("WARNING: woken up for unkown reason, no advert")
             self.advert = None
                             
 
@@ -89,6 +88,8 @@ class SBSeller(Seller):
         if quote.job in self.active_trades:
             p = self.active_trades[quote.job]
             p.receive_cancel(quote)
+        elif quote.job.id in self.cancelled_ids:
+            trace("WARNING: got cancel for job already cancelled")
         elif quote.job in self.resource.jobs:
             self.node.resource.cancel(quote.job)
             if trace: trace("Got cancel for job already started, cancelling")
@@ -108,40 +109,40 @@ class SBSeller(Seller):
             job = quote.job
             self.accept = None
             self.cancel = None
+            
             yield hold, self, seller.timeout
 
             if self.accept: # we've received an accept
-                assert self.accept == quote
+                if self.accept != quote:
+                    trace("WARNING: got accept for other quote!")
+                    print quote, self.accept
+                else:
+                    # record successful quote
+                    seller.rationale.observe(quote, True)
+                    
+                    # can we still do it?
+                    if seller.resource.can_allocate(quote.job): 
+                        if trace:
+                            trace("got accept, sending confirm")
+                        confirm = Confirm(quote)
+                        confirm.send_msg(seller.node, quote.buyer.node)
+                        seller.resource.start(quote.job)
+                        #TODO yield duration of job here?
 
-                # record successful quote
-                seller.rationale.observe(quote, True)
-                
-                # can we still do it?
-                if seller.resource.can_allocate(quote.job): 
-                    if trace:
-                        trace("got accept, sending confirm")
-                    confirm = Confirm(quote)
-                    confirm.send_msg(seller.node, quote.buyer.node)
-                    seller.resource.start(quote.job)
-                    #TODO yield duration of job here?
-
-                else: # we cannot honour our original quote
-                    if trace:
-                        trace("got accept, now too busy, rejecting")
-                    reject = Reject(quote)
-                    reject.send_msg(seller.node, quote.buyer.node)
+                    else: # we cannot honour our original quote
+                        if trace:
+                            trace("got accept, now too busy, rejecting")
+                        reject = Reject(quote)
+                        reject.send_msg(seller.node, quote.buyer.node)
 
             elif self.cancel: # we've received a cancel
-                assert self.cancel == quote
                 if quote.job in seller.resource.jobs:
                     trace and trace("got pre-timeout cancel, terminating job and bidding")
                     seller.resource.cancel(quote.job)
+                    seller.cancelled_ids.add(quote.job.id)
                 else:
                     if trace:
                         trace("WARNING: got cancel before we got an accept!")
-                    # SimPy work around
-                    #canceller = Process()
-                    #canceller.cancel(self)
 
             else: # we've timed out
 

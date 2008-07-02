@@ -10,29 +10,44 @@ trace.enabled = False
 
 from sealedbid.model import SBModel
 
+size = 10
 test_kws = dict(
-        size=100,
-        arrival_mean=0.1,
-        arrival_dist=dists.expon,
-        service_means=dists.gamma(0.1),
-        latency_means=dists.gamma(0.1),
-        latency_dist=dists.gamma,
-        #topology=Topologies.test_network,
+        size=size,
+        load=1.2,
+        #service_means=dists.gamma(0.1),
+        #latency_means=dists.gamma(0.1),
+        #global_latency=dists.gamma(0.1),
+        topology=Topologies.alltoall(size)
         )
 
 model = SBModel(**test_kws)
-
-
-model.run(until=200)
+model.run()
 
 import stats
 import record
 
-#print stats.mean_server_utilisation(model)
-#print stats.mean_queue_time(model)
+print "Grid:"
 
+acc = 0
+
+print "resource util %.2f%%" % (stats.mean_resource_util(model) * 100)
+print "server util: %.2f%%" % (stats.mean_server_utilisation(model) * 100)
+print "queue time: %.2fs" % stats.mean_queue_time(model)
+
+failed = record.failures.count / float(record.njobs) * 100
+print "failed: %.2f%%" % failed
+record.failures.report()
+record.successes.report()
+
+print sum(record.failed.values()), record.failures.count
+
+for reason, count in record.failed.iteritems():
+    print "Failed by %s: %.2f%%" % (reason, 
+                                    count/float(record.failures.count)*100)
+print 
+
+print "Economy:"
 record.report()
-print "avg buyer wait:", record.buyer_timeouts.mean()
 
                   
 

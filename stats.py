@@ -17,34 +17,50 @@ class dists(object):
             while (x <= 0):
                 x = normalvariate(mean, sigma)
             return x
+        norm.mean = mean
         return norm
+
 
     @staticmethod
     def normal_int(mean, sigma=None):
         norm = dists.normal(mean, sigma)
-        return lambda : int(norm())
+        x = lambda : int(norm())
+        x.mean = mean
+        return x
 
 
     @staticmethod
     def expon(mean):
         lmda = 1.0/mean
-        return lambda: expovariate(lmda)
+        x = lambda: expovariate(lmda)
+        x.mean = mean
+        return x
 
     @staticmethod
     def gamma(mean, shape=2):
-        return lambda: gammavariate(shape, mean)
+        x = lambda: gammavariate(shape, mean)
+        x.mean = mean
+        return x
 
     @staticmethod
     def uniform(a, b):
-        return lambda: uniform(a, b)
+        x = lambda: uniform(a, b)
+        x.mean = (b - a) / 2
+        return x
+
 
     @staticmethod
     def uniform_int(a, b):
-        return lambda: randint(a, b)
+        x = lambda: randint(a, b)
+        x.mean = (b - a) / 2
+        return x
 
     @staticmethod
     def constant(i):
-        return lambda: i
+        x = lambda: i
+        x.mean = i
+        return x
+
 
 # general stat calculation functions
 def list_mean(items, getter):
@@ -55,6 +71,9 @@ def mean_server_utilisation(model):
 
 def mean_queue_time(model):
     return list_mean(model.nodes, lambda x: x.server.mean_queue_wait)
+
+def mean_resource_util(model):
+    return list_mean(model.nodes, lambda x: x.resource.utilisation)
 
 # supply/demand calculations
 

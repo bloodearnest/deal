@@ -1,7 +1,11 @@
 import math
+from collections import defaultdict
+from itertools import izip, repeat, chain
+
 import pylab
-from itertools import izip
 from SimPy.Simulation import now, Tally
+import draw
+from util import RingBuffer
 
 buys = []
 buys_theory = []
@@ -10,160 +14,275 @@ sells_theory = []
 trade_times = []
 trade_prices = []
 
-failed = []
 buyer_timeouts = Tally("buyer_timeouts")
+buyer_util = Tally("buyer_util")
+seller_util = Tally("seller_util")
 
-def record_trade(quote, success):
+njobs = 0
+
+class Tracker(object):
+    def __init__(self, name):
+        self.name = name
+        self.sizes = Tally(name + " job sizes")
+        self.limits = Tally(name + " buyer limits")
+        self.degrees = Tally(name + " buyer node degrees")
+
+    def record(self, quote):
+        self.sizes.observe(quote.job.size)
+        self.limits.observe(quote.buyer.limit)
+        self.degrees.observe(len(quote.buyer.node.neighbors))
+
+    @property
+    def count(self):
+        return self.sizes.count()
+
+    def report(self):
+        print self._report(self.sizes)
+        print self._report(self.limits)
+        print self._report(self.degrees)
+
+    def _report(self, tally):
+        s = "mean %s: %.2f (%.2f)"
+        if tally.count():
+            vars = (tally.name, tally.mean(), math.sqrt(tally.var()))
+        else:
+            vars = (tally.name, 0, 0)
+        return s % vars
+
+
+successes = Tracker("successful")
+failures = Tracker("failed")
+failed = defaultdict(int)
+
+#void Experiment::record_trade(const Job job,
+#                              const Quote& quote,
+#                              const Buyer* buyer,
+#                              const Seller* seller,
+#                              const Time time)
+#{
+#   if (seller == NULL) {
+#      failed_sizes.push_back(job.size);
+#      failed_times.push_back(time - job.time);
+#      failed_limit_prices.push_back(buyer->limit_price);
+#   }
+#   else {
+
+#      trades_buyer_actual.push_back(Trade(quote.price, job.work, time));
+#      trades_buyer_limits.push_back(Trade(buyer->limit_price, job.work, time));
+#      
+#      trades_seller_actual.push_back(Trade(quote.price, job.work, time));
+#      trades_seller_limits.push_back(Trade(seller->limit_price, job.work, time));
+
+#      allocation_time.push_back(time - job.time);
+#      allocated_sizes.push_back(job.size);
+#   }
+#}
+
+
+FAIL_JOBSIZE = 0
+FAIL_LIMIT = 1
+buy_map = defaultdict(list)
+
+def record_trade(quote, success=True):
+    global njobs
+    njobs += 1
     t = now()
-    if success:
-        trade = (quote.price, quote.quantity, t)
-        trade_times.append(t)
-        trade_prices.append(quote.price)
-        buys.append(trade)
-        sells.append(trade)
-    else:
-        failed.append((quote.buyer.limit, quote.job.size))
 
-def equilibrium(buys, sells, name):
+    successes.record(quote)
+
+    #record trade details
+    trade = (quote.price, quote.quantity, t)
+    trade_times.append(t)
+    trade_prices.append(quote.price)
+    buys.append(trade)
+    sells.append(trade)
+    buyer_util.observe(quote.buyer.limit - quote.price)
+    seller_util.observe(quote.price - quote.seller.limit)
+
+def record_failure(quote, ninvalid, ntimedout, nrejected):
+    global njobs
+    njobs += 1
+    failures.record(quote)
+    nattempted = ntimedout + nrejected
+    if nattempted == 0:
+        # we attempted no quotes
+        if ninvalid > 1: 
+            failed["High Limit"] += 1
+        else:
+            failed["No Quotes"] += 1
+    else:
+        if nrejected == 0:
+            failed["Timeouts"] += 1
+        elif ntimedout == 0:
+            failed["Busy"] += 1
+        else:
+            failed["Unkown"] += 1
+
     
-    PRICE = 0
-    QUANT = 1
-    TIME = 2
+
+PRICE = 0
+QUANT = 1
+TIME = 2
+
+def latechain(*iterables):
+    for it in iterables:
+        i = iter(it)
+        for val in i:
+            yield val
+
+
+def pqcurve_iter(buys, sells):
+    
+    # use static default mutable arg hack, since
+    # it seems that generators can't be closures!
+    def trade_iter(trades, n_done=[]):
+        for t in trades:
+            yield t
+        n_done.append(0)
+        if len(n_done) < 2:
+            while 1:
+                yield None, None, None
+
+    buys = trade_iter(buys)
+    sells = trade_iter(sells)
+
+    bp, bq, bt = buys.next()
+    sp, sq, st = sells.next()
+    
+    if sp > bp: # no intersect
+        raise StopIteration
+    else:
+        while 1:
+            
+            if sp and bq > sq:
+                point = bp, sp, sq, bt, st
+                bq -= sq
+                sp, sq, st = sells.next()
+            
+            elif bp and bq < sq:
+                point = bp, sp, bq, bt, st
+                sq -= bq
+                bp, bq, bt = buys.next()
+
+            else: #sq == bq
+                point = bp, sp, max(bq, sq), bt, st
+                bp, bq, bt = buys.next()
+                sp, sq, st = sells.next()
+
+            yield point
+        
+
+
+def find_equilibrium(buys, sells):
+    
     eq_price = 0
     eq_time = 0
     surplus = 0
 
-    # draw time graph
-    buys.sort()
-    sells.sort()
-    buys.reverse()
+    found = False
+    sell_prices = [0,0]
+    buy_prices = [0,0]
+    last_bt = last_st = 0
 
-    # do we cross over?
-    if (sells[0][PRICE] <= buys[0][PRICE]):
+    for buy, sell, q, bt, st in pqcurve_iter(buys, sells):
 
-        found = False
-        bfinished = sfinished = False
+        if buy is None:
+            # reached end of buys
+            eq_price = sum(sell_prices) / 2.0
+            eq_time = max(last_st, last_bt)
+            break
 
-        bindex = 0
-        sindex = 0
-        buy = buys[bindex]
-        sell = sells[sindex]
-        last_buy = last_sell = None
+        elif sell is None:
+            # reached end of sells
+            eq_price = sum(buy_prices) / 2.0
+            eq_time = max(last_st, last_bt)
+            break
 
-        x = last_buy_price = last_sell_price = 0
-        xs = [0,0]
-        dy = []
-        sy = []
+        elif sell > buy:
+            # we have crossed the equilibrium point
+            eq_price = (buy_prices[1] + sell_prices[1]) / 2.0
+            eq_time = last_bt
+            break
 
-        while bindex < len(buys) and sindex < len(sells):
-
-            if sell[QUANT] == buy[QUANT]:
-                quantity = sell[QUANT]
-            else:
-                quantity = math.fabs(sell[QUANT] - buy[QUANT])
-
-            # plotting 
-            x += quantity
-            xs += [x, x]
-            sy += [last_sell_price, sell[PRICE]]
-            last_sell_price = sell[PRICE]
-            dy += [last_buy_price, buy[PRICE]]
-            last_buy_price = buy[PRICE]
-
-            # stats
-            profit = (buy[PRICE] - sell[PRICE]) * quantity
-
-            if not found:
-                if (sell[PRICE] > buy[PRICE]):
-                    # we have crossed the equilibrium point
-                    eq_price = (last_buy[PRICE] + last_sell[PRICE]) / 2.0
-                    eq_time = last_buy[TIME]
-                    found = True
-
-                elif sindex + 2 == len(sells):
-                    # no more sells
-                    eq_price = (buy[PRICE] + buys[bindex+1][0]) / 2.0
-                    eq_time = buy[TIME]
-                    surplus += profit
-                    found = True
-                    sindex = len(sells)
-                    
-                elif bindex + 2 == len(buys):
-                    # no more buys
-                    eq_price = (sell[PRICE] + sells[sindex+1][0]) / 2.0
-                    eq_time = sell[TIME]
-                    surplus += profit
-                    found = True
-                    bindex = len(buys)
-
-                else:
-                    surplus += profit
-
-            # move along according to quantity
-            if buy[QUANT] > sell[QUANT]:
-                buy = (buy[PRICE], buy[QUANT] - sell[QUANT], buy[TIME])
-                sindex += 1
-                last_sell = sell
-                if sindex < len(sells):
-                    sell = sells[sindex]
-            elif buy[QUANT] < sell[QUANT]:
-                sell = (sell[PRICE], sell[QUANT] - buy[QUANT], sell[TIME])
-                bindex += 1
-                last_buy = buy
-                if bindex < len(buys):
-                    buy = buys[bindex]
-            else:
-                last_buy = buy
-                last_sell = sell
-                bindex += 1
-                sindex += 1
-                buy = buys[bindex]
-                sell = sells[sindex]
-
-        ms = min(len(xs), len(sy))
-        md = min(len(xs), len(dy))
-        print "plotting", name
-        pylab.plot(xs[:ms], sy[:ms])
-        pylab.plot(xs[:md], dy[:md])
+        else:
+            profit = (buy - sell) * q
+            surplus += profit
+            sell_prices.pop(0)
+            sell_prices.append(sell)
+            buy_prices.pop(0)
+            buy_prices.append(buy)
+            last_bt = bt
+            last_st = st
 
     return eq_price, surplus, eq_time
 
-def smooth(x, y, n):
-    xs = []
-    ys = []
-    iter = izip(x, y)
-    t, p = iter.next()
-    m = int(max(x))
-    for i in range(0, m, m/n):
-        s = []
-        while t < i:
-            s.append(p)
-            t, p = iter.next()
-        if s:
-            xs.append(i)
-            ys.append(sum(s)/float(len(s)))
-    return xs, ys
-
-
 
 def report():
-    
-    real = equilibrium(buys, sells, "real")
-    theory = equilibrium(buys_theory, sells_theory, "theory")
-    pylab.savefig("eq.png")
 
-    xs, ys = smooth(trade_times, trade_prices, 20)
+    # sort all trades
+    buys.sort()
+    buys.reverse()
+    sells.sort()
+    buys_theory.sort()
+    buys_theory.reverse()
+    sells_theory.sort()
+    
+    
+    real = find_equilibrium(buys, sells)
+    plot_eq(buys, sells)
+    draw.supdem(buys, sells)
+    pylab.savefig("real.png")
     pylab.clf()
-    pylab.plot(xs, ys)
-    pylab.savefig("trades.png")
+    
+    
+    theory = find_equilibrium(buys_theory, sells_theory)
+    plot_eq(buys_theory, sells_theory)
+    draw.supdem(buys_theory, sells_theory)
+    pylab.savefig("theory.png")
+    
+    #xs, ys = draw.smooth(trade_times, trade_prices, 20)
+    #pylab.clf()
+    #pylab.plot(xs, ys)
+    #pylab.savefig("trades.png")
 
 
     #alpha = real[0] / theory[0]
     eff = real[1] / theory[1] * 100
-    print real
-    print theory
+    print "actual eq price: %d" % real[0]
+    print "theory eq price: %d" % theory[0]
     print "efficiency: %.2f%%" % eff
+    bu = buyer_util.mean()
+    su = seller_util.mean()
+    print "avg trader util: %d (buyer: %d, seller: %d)" % ((bu+su)/2.0,bu,su)
+    print "avg buyer wait: %.2f" % buyer_timeouts.mean()
 
+
+
+def plot_eq(buys, sells):
+    x = []
+    last_q = last_bp = last_sp = 0
+    by = []
+    sy = []
+
+    for bp, sp, q, _, _ in pqcurve_iter(buys, sells):
+        x += [last_q, last_q]
+
+        if bp:
+            by += [last_bp, bp]
+
+        if sp:
+            sy += [last_sp, sp]
+
+        last_q += q
+        last_bp = bp
+        last_sp = sp
+
+    pylab.plot(x[:len(by)], by)
+    pylab.plot(x[:len(sy)], sy)
+
+
+
+    
 
 
 
