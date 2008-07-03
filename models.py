@@ -12,6 +12,7 @@ class GridModel(Model):
     def __init__(self,
                  size=100,
                  load=0.5,
+                 run_times=3,
                  arrival_dist = dists.expon,
                  mean_degree=2,
                  resource_sizes = dists.gamma(100),
@@ -26,14 +27,28 @@ class GridModel(Model):
                  latencies = None):
 
 
+        self.runtime = run_times * job_durations.mean
+        
         # calculated results
         duration = job_durations.mean;
-        total_resource_size = size * resource_sizes.mean;
-        max_jobs = total_resource_size / job_sizes.mean;
-        arrival_mean = duration / (max_jobs * load);
-        self.runtime = 3.0 * duration;
-        self.inter_arrival_time = arrival_dist(arrival_mean)
+        total_capacity = size * resource_sizes.mean;
+        max_jobs = total_capacity / float(job_sizes.mean);
+        print "max_jobs", max_jobs
+        arrival_mean = duration / float(max_jobs);
+        print "old mean:", arrival_mean
 
+        d = (self.runtime / arrival_mean * job_sizes.mean * job_durations.mean)
+        s = (size * resource_sizes.mean * self.runtime)
+
+        print "expected demand q:", d 
+        print "expected supply q:", s
+
+        #total_supply = size * resource_sizes.mean * run_times
+        #njobs = total_supply / float(job_sizes.mean * job_durations.mean)
+        #arrival_mean = njobs / float(run_times * job_durations.mean)
+        #print "new mean:", arrival_mean
+
+        self.inter_arrival_time = arrival_dist(arrival_mean * load)
         self.job_sizes = job_sizes
         self.job_durations = job_durations
 
@@ -57,6 +72,9 @@ class GridModel(Model):
         # do model specific setup
         self.setup()
 
+        self.bq_total = []
+        self.sq_total = []
+
 
     @property
     def nodes(self):
@@ -72,6 +90,7 @@ class GridModel(Model):
         dst = self.random_node()
         job = self.new_job()
         buyer = self.new_buyer(job, dst)
+        self.bq_total.append(job.quantity)
         record.buys_theory.append((buyer.limit, job.quantity, 0))
 
     def new_job(self):
@@ -84,6 +103,7 @@ class GridModel(Model):
             record.sells_theory.append((n.seller.limit,
                                         n.resource.capacity * time,
                                         0))
+            self.sq_total.append(n.resource.capacity * time)
 
         super(GridModel, self).start(*a, **kw)
 

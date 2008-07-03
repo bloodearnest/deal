@@ -138,6 +138,7 @@ def pqcurve_iter(buys, sells):
     def trade_iter(trades, n_done=[]):
         for t in trades:
             yield t
+        #yield t
         n_done.append(0)
         if len(n_done) < 2:
             while 1:
@@ -148,7 +149,7 @@ def pqcurve_iter(buys, sells):
 
     bp, bq, bt = buys.next()
     sp, sq, st = sells.next()
-    
+
     if sp > bp: # no intersect
         raise StopIteration
     else:
@@ -227,24 +228,22 @@ def report():
     buys_theory.reverse()
     sells_theory.sort()
     
-    
     real = find_equilibrium(buys, sells)
     plot_eq(buys, sells)
-    draw.supdem(buys, sells)
+    #draw.supdem(buys, sells)
     pylab.savefig("real.png")
     pylab.clf()
     
     
     theory = find_equilibrium(buys_theory, sells_theory)
     plot_eq(buys_theory, sells_theory)
-    draw.supdem(buys_theory, sells_theory)
+    #draw.supdem(buys_theory, sells_theory)
     pylab.savefig("theory.png")
     
     #xs, ys = draw.smooth(trade_times, trade_prices, 20)
     #pylab.clf()
     #pylab.plot(xs, ys)
     #pylab.savefig("trades.png")
-
 
     #alpha = real[0] / theory[0]
     eff = real[1] / theory[1] * 100
@@ -259,26 +258,38 @@ def report():
 
 
 def plot_eq(buys, sells):
-    x = []
-    last_q = last_bp = last_sp = 0
+    bx = []
     by = []
+    sx = []
     sy = []
+    last_q = last_bp = last_sp = max_by = 0
+    bdone = False
+    sdone = False
+
 
     for bp, sp, q, _, _ in pqcurve_iter(buys, sells):
-        x += [last_q, last_q]
 
         if bp:
+            bx += [last_q, last_q]
             by += [last_bp, bp]
+            max_by = max(max_by, bp)
 
         if sp:
+            sx += [last_q, last_q]
             sy += [last_sp, sp]
 
         last_q += q
         last_bp = bp
         last_sp = sp
 
-    pylab.plot(x[:len(by)], by)
-    pylab.plot(x[:len(sy)], sy)
+    #bx.append(bx[-1])
+    #by += [0]
+
+    #sx.append(sx[-1])
+    #sy += [max_by]
+
+    pylab.plot(bx, by)
+    pylab.plot(sx, sy)
 
 
 

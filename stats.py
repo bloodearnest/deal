@@ -38,7 +38,8 @@ class dists(object):
 
     @staticmethod
     def gamma(mean, shape=2):
-        x = lambda: gammavariate(shape, mean)
+        alpha = mean / float(shape)
+        x = lambda: gammavariate(alpha, shape)
         x.mean = mean
         return x
 

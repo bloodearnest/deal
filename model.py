@@ -27,7 +27,7 @@ class Model(object):
                 elapsed = now - start
                 guess = elapsed.seconds / float(x) * 100
                 eta = start + timedelta(seconds=guess)
-                print "[%s] %d%% [ETA: %s]" % (now.strftime('%H:%M:%S'),
+                print "[%s] %02d%% [ETA: %s]" % (now.strftime('%H:%M:%S'),
                                                x,
                                                eta.strftime('%H:%M:%S'))
                 x += 5

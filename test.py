@@ -10,19 +10,21 @@ trace.enabled = False
 
 from sealedbid.model import SBModel
 
-size = 10
+size = 100
 test_kws = dict(
         size=size,
-        load=1.2,
+        load=1.0,
         #service_means=dists.gamma(0.1),
         #latency_means=dists.gamma(0.1),
         #global_latency=dists.gamma(0.1),
-        topology=Topologies.alltoall(size)
+        #topology=Topologies.alltoall(size)
         )
 
 model = SBModel(**test_kws)
 model.run()
 
+print "actual demand q:", sum(model.bq_total), len(model.bq_total)
+print "actual supply q:", sum(model.sq_total), len(model.sq_total)
 import stats
 import record
 
