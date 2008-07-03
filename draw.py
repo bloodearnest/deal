@@ -1,6 +1,9 @@
 from itertools import izip
 
 import pylab
+
+import equilibrium
+
 PRICE = 0
 QUANT = 1
 
@@ -48,4 +51,46 @@ def topology(g):
         networkx.draw(g, pos=networkx.circular_layout(g))
         pylab.savefig("topology.png")
         pylab.clf()
+
+def plot_eq(buys, sells):
+    bx = []
+    by = []
+    sx = []
+    sy = []
+    last_q = last_bp = last_sp = max_by = 0
+    bdone = False
+    sdone = False
+
+
+    for bp, sp, q, _, _ in equilibrium.pqcurve_iter(buys, sells):
+
+        if bp:
+            bx += [last_q, last_q]
+            by += [last_bp, bp]
+            max_by = max(max_by, bp)
+
+        if sp:
+            sx += [last_q, last_q]
+            sy += [last_sp, sp]
+
+        last_q += q
+        last_bp = bp
+        last_sp = sp
+
+    #bx.append(bx[-1])
+    #by += [0]
+
+    #sx.append(sx[-1])
+    #sy += [max_by]
+
+    pylab.plot(bx, by)
+    pylab.plot(sx, sy)
+
+
+
+    
+
+
+
+
 
