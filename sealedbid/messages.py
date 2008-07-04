@@ -1,10 +1,11 @@
 from SimPy.Simulation import reactivate
 from message import MessageWithQuote
-
+import record
 
 class Advert(MessageWithQuote):
     """Advert sent to seller"""
     def process(self, src, dst, trace, **kw):
+        record.job_penetration[self.quote.job.id] += 1
         ttl = kw.get('ttl', 1)
         dst.shout_msg(self, ttl=ttl)
 

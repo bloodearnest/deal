@@ -11,7 +11,7 @@ class GridModel(Model):
 
     def __init__(self,
                  size=100,
-                 load=0.5,
+                 load=1.0,
                  run_times=3,
                  arrival_dist = dists.expon,
                  mean_degree=2,
@@ -46,6 +46,12 @@ class GridModel(Model):
         self.graph.global_latency = global_latency
         # add latency weights to graph
         latencies(self.graph)
+        
+        # store for stats
+        self.size = size
+        self.load = load
+        self.topology = topology.__name__
+
 
         # add model specific components
         for node in self.graph.nodes_iter():

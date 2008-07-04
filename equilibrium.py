@@ -54,7 +54,12 @@ def find_equilibrium(buys, sells):
 
     for buy, sell, q, bt, st in pqcurve_iter(buys, sells):
 
-        if buy is None:
+        if buy is None and sell is None:
+            eq_price = (buy_prices[1] + sell_prices[1]) / 2.0
+            eq_time = last_bt
+            break
+
+        elif buy is None:
             # reached end of buys
             eq_price = sum(sell_prices) / 2.0
             eq_time = max(last_st, last_bt)
@@ -66,10 +71,10 @@ def find_equilibrium(buys, sells):
             eq_time = max(last_st, last_bt)
             break
 
-        elif sell > buy:
+        elif sell > buy or (buy is None and sell is None):
             # we have crossed the equilibrium point
             eq_price = (buy_prices[1] + sell_prices[1]) / 2.0
-            eq_time = last_bt
+            eq_time = max(last_st, last_bt)
             break
 
         else:

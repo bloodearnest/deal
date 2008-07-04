@@ -1,6 +1,9 @@
 import math
 from collections import defaultdict
-#from itertools import izip, repeat, chain
+from odict import OrderedDict
+
+import stats
+import equilibrium
 
 from SimPy.Simulation import now, Tally
 
@@ -23,11 +26,13 @@ successes = JobTracker("successful")
 failures = JobTracker("failed")
 failed = defaultdict(int)
 
-def record_trade(quote, success=True):
-    global njobs
-    njobs += 1
-    t = now()
+failure_reasons = defaultdict(list)
 
+job_penetration = defaultdict(int)
+job_penetration_tally = Tally("job penetration")
+
+def record_trade(quote, success=True):
+    t = now()
     successes.record(quote)
 
     # record trade details
@@ -41,27 +46,86 @@ def record_trade(quote, success=True):
     buyer_util.observe(quote.buyer.limit - quote.price)
     seller_util.observe(quote.price - quote.seller.limit)
 
-def record_failure(quote, ninvalid, ntimedout, nrejected):
+    _clean_up_job(quote.job)
+
+def record_failure(quote):
+    failures.record(quote)
+    reasons = failure_reasons[quote.job.id]
+
+    rcount = defaultdict(float)
+    for r in reasons:
+        rcount[r] += (1 / float(len(reasons)))
+
+    for r in rcount:
+        failed[r] += rcount[r]
+        
+    _clean_up_job(quote.job)
+
+def _clean_up_job(job):
+    # clear up the memory using in tracking this job
     global njobs
     njobs += 1
-    failures.record(quote)
-    nattempted = ntimedout + nrejected
-    if nattempted == 0:
-        # we attempted no quotes
-        if ninvalid > 1: 
-            failed["High Limit"] += 1
-        else:
-            failed["No Quotes"] += 1
-    else:
-        if nrejected == 0:
-            failed["Timeouts"] += 1
-        elif ntimedout == 0:
-            failed["Busy"] += 1
-        else:
-            failed["Unkown"] += 1
+    if job.id in failure_reasons:
+        del failure_reasons[job.id]
+    if job.id in job_penetration:
+        p = job_penetration[job.id]
+        del job_penetration[job.id]
+        job_penetration_tally.observe(p)
 
+
+
+counts = defaultdict(int)
+
+def calc_results(model):
+    results = OrderedDict()
+
+    results["size"] = model.size
+    results["load"] = model.load
+    results["topology"] = model.topology
+    counts["GENERAL"] += 3
+
+    # grid performance
+    results["resource util"] = stats.mean_resource_util(model) * 100
+    results["server util"] = stats.mean_server_utilisation(model) *100 
+    results["queue time"] = stats.mean_queue_time(model)
+    results["job penetration"] = job_penetration_tally.mean() / float(model.size) * 100.0
+    counts["GRID"] += 4
+
+    # failure issues
+    results["prop failed"] = failures.count / float(njobs) * 100
+    results["failed_sizes"] = failures.sizes.mean()
+    results["failed_limits"] = failures.limits.mean()
+    results["failed_degrees"] = failures.degrees.mean()
+    results["succeeded_sizes"] = successes.sizes.mean()
+    results["succeeded_limits"] = successes.limits.mean()
+    results[ "succeeded_degrees"] = successes.degrees.mean()
+    counts["GRID"] += 7
+
+    for reason, count in failed.iteritems():
+        results["prop failed by %s" % reason] = count/float(failures.count) * 100
+        counts["GRID"] += 1
+
+    # economic stuff
+    buys.sort()
+    buys.reverse()
+    sells.sort()
+    buys_theory.sort()
+    buys_theory.reverse()
+    sells_theory.sort()
     
+    real = equilibrium.find_equilibrium(buys, sells)
+    theory = equilibrium.find_equilibrium(buys_theory, sells_theory)
+    eff = real[1] / theory[1] * 100
+    
+    results["eq price"] = real[0]
+    results["eq price theory"] = theory[0]
+    results["efficiency"] = eff
+    results["mean buyer util"] = buyer_util.mean()
+    results["mean seller util"] = seller_util.mean()
+    counts["ECO"] += 5
 
+    return results
+ 
 
 
 

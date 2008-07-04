@@ -1,6 +1,7 @@
 from itertools import izip
-
+import networkx
 import pylab
+from stats import dists
 
 import equilibrium
 

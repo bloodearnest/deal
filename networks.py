@@ -92,13 +92,22 @@ def generate_network(generator, node_type=Node, draw=True):
 
     return G
 
+def name_return(f):
+    def entangle(*a, **kw):
+        x = f(*a, **kw)
+        x.__name__ = f.__name__
+        return x
+    return entangle
+
 class Topologies(object):
 
     @staticmethod
+    @name_return
     def random(n, p):
-        return lambda: generators.random_graphs.fast_gnp_random_graph(n,p)
+        x = lambda: generators.random_graphs.fast_gnp_random_graph(n,p)
 
     @staticmethod
+    @name_return
     def random_by_degree(n, degree):
         def gen():
             g = networkx.Graph()
@@ -118,6 +127,7 @@ class Topologies(object):
         return gen
 
     @staticmethod
+    @name_return
     def test_network():
         g = networkx.Graph()
         nodes = range(10)
@@ -127,6 +137,7 @@ class Topologies(object):
         return g
 
     @staticmethod
+    @name_return
     def alltoall(n):
         def gen():
             g = networkx.Graph()

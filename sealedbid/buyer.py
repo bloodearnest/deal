@@ -96,6 +96,7 @@ class SBBuyer(Buyer):
                         if trace:
                             trace("accept rejected, choosing next quote")
                         rejected.append(self.quote)
+                        record.failure_reasons[job.id].append("Too Busy Later")
                         self.quote = None
                     elif self.rejected in timedout:
                         # reject from quote already timed out
@@ -112,14 +113,15 @@ class SBBuyer(Buyer):
                     cancel = Cancel(self.quote)
                     cancel.send_msg(self.node, self.quote.seller.node)
                     timedout.append(self.quote)
+                    record.failure_reasons[job.id].append("Timedout")
                     self.quote = None
 
         if trace: trace("run out of valid quotes")
-        
-        record.record_failure(quote, 
-                              len(self.invalid_quotes),
-                              len(timedout),
-                              len(rejected))
+ 
+        if len(rejected) + len(timedout) == 0 and len(self.invalid_quotes) > 0:
+            record.failure_reasons[job.id].append("High Buyer Limit")
+
+        record.record_failure(quote)
 
         raise StopIteration
 

@@ -1,6 +1,7 @@
 from SimPy.Simulation import activate, hold, passivate, reactivate, now, Process
 from util import reactivate_on_call
 from market import Ask,  Seller
+import record
 from trace import Tracer
 from messages import *
 
@@ -49,6 +50,7 @@ class SBSeller(Seller):
                         activate(process, process.trade(self, quote, trace))
                         self.active_trades[job] = process
                     else:
+                        record.failure_reasons[job.id].append("Too Busy")
                         if trace:
                             trace("resource has no room for job")
                 else:
