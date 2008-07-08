@@ -5,7 +5,6 @@ import networkx
 from networkx import generators, connected_components, Graph, XGraph
 from trace import Tracer
 from stats import dists, random_other
-import draw as _draw
 
 MAX_NETGEN_ATTEMPTS = 5
 
@@ -28,8 +27,6 @@ class Node(object):
         else:
             raise StandardError("no link and no global latency!")
             
-            
-
     def confirm_buyer(self, buyer):
         if buyer not in self.buyers:
             raise StandardError("%s not found at %s" % (buyer, self))
@@ -74,8 +71,6 @@ class Node(object):
 def generate_network(generator, node_type=Node, draw=True):
     count = 0
     graph = generator()
-    if draw:
-        _draw.topology(graph)
     while len(networkx.connected_components(graph)) != 1:
         if count >= MAX_NETGEN_ATTEMPTS:
             raise StandardError("network with single giant component "

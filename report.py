@@ -1,10 +1,13 @@
-import pylab
+from __future__ import with_statement
+
 import stats
 import record
+import pylab
 from draw import plot_eq
 import equilibrium
 import path
 import fcntl
+from scripts.util import filelock
 
 def printr(results):
 
@@ -21,30 +24,27 @@ def printr(results):
     for k,v in results.items()[b:]:
         print " - %s: %0.2f" % (k,v)
 
-    plot_eq(record.buys, record.sells)
-    pylab.savefig("real.png")
-    pylab.clf()
-    plot_eq(record.buys_theory, record.sells_theory)
-    pylab.savefig("theory.png")
-
-def write(results, fname):
-
-    fname = path.path(fname)
+def write(results, out, fname):
+    
+    fname = out / fname
 
     write_headers = not fname.exists()
-    f = open(fname, 'a')
-    fcntl.flock(f, fcntl.LOCK_EX)
 
-    if write_headers:
-        f.write(',\t'.join(results.keys()))
+    with filelock(fname) as f:
+        if write_headers:
+            f.write(',\t'.join(results.keys()))
+            f.write('\n')
+            f.flush()
+
+        f.write(',\t'.join(str(v) for v in results.values()))
         f.write('\n')
-        f.flush()
 
-    f.write(',\t'.join(str(v) for v in results.values()))
-    f.write('\n')
 
-    fcntl.flock(f, fcntl.LOCK_UN)
-    f.close()
+    #plot_eq(record.buys, record.sells)
+    #pylab.savefig(out / "eq-real%d.png" %s )
+    #pylab.clf()
+    #plot_eq(record.buys_theory, record.sells_theory)
+    #pylab.savefig("theory.png")
 
 
 

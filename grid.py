@@ -16,7 +16,7 @@ class Server(object):
                                   monitorType=Tally)
 
         # recent history of messages, to avoid re-handling
-        self.msg_history = RingBuffer(200)
+        self.msg_history = RingBuffer(300)
 
     def __str__(self):
         return "server %d" % self.id
