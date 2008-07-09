@@ -50,7 +50,7 @@ class SBSeller(Seller):
                         activate(process, process.trade(self, quote, trace))
                         self.active_trades[job] = process
                     else:
-                        record.failure_reasons[job.id].append("Too Busy")
+                        record.record_failure_reason(job.id, "Too Busy")
                         if trace:
                             trace("resource has no room for job")
                 else:

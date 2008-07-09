@@ -26,8 +26,18 @@ successes = JobTracker("successful")
 failures = JobTracker("failed")
 failed = defaultdict(int)
 
-failure_reasons = defaultdict(list)
+failure_reasons_record = defaultdict(list)
+failure_reasons = [
+        "Too Busy",
+        "Too Busy Later",
+        "Timedout",
+        "High Buyer Limit",
+        "Unknown"
+        ]
 
+for r in failure_reasons:
+    failed[r] = 0
+        
 job_penetration = defaultdict(int)
 job_penetration_tally = Tally("job penetration")
 
@@ -50,16 +60,24 @@ def record_trade(quote, success=True):
 
 def record_failure(quote):
     failures.record(quote)
-    reasons = failure_reasons[quote.job.id]
+    reasons = failure_reasons_record[quote.job.id]
 
     rcount = defaultdict(float)
-    for r in reasons:
-        rcount[r] += (1 / float(len(reasons)))
+    for r in failure_reasons:
+        if r in reasons:
+            rcount[r] += (1 / float(len(reasons)))
+        else:
+            rcount[r] = 0
 
     for r in rcount:
         failed[r] += rcount[r]
         
     _clean_up_job(quote.job)
+
+def record_failure_reason(jobid, reason):
+    assert reason in failure_reasons
+    failure_reasons_record[jobid].append(reason)
+
 
 def _clean_up_job(job):
     # clear up the memory using in tracking this job
