@@ -48,6 +48,18 @@ class MarketRules(object):
 
 
 class Buyer(Process):
+    def __init__(self, id, node):
+        Process.__init__(self, "%s %s" % (self.__class__, id))
+        self.id = id
+        self.node = node
+        self.active = True
+        node.buyers.add(self)
+
+    def cleanup(self):
+        self.node.buyers.remove(self)
+        self.active = False
+        self.node.buyer_ids.add(self.id)
+    
     @property
     def limit(self):
         return self.rationale.limit

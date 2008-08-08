@@ -61,13 +61,13 @@ def find_equilibrium(buys, sells):
 
         elif buy is None:
             # reached end of buys
-            eq_price = sum(sell_prices) / 2.0
+            eq_price = (sell_prices[1] + buy_prices[0]) / 2.0
             eq_time = max(last_st, last_bt)
             break
 
         elif sell is None:
             # reached end of sells
-            eq_price = sum(buy_prices) / 2.0
+            eq_price = (sell_prices[0] + buy_prices[1]) / 2.0
             eq_time = max(last_st, last_bt)
             break
 

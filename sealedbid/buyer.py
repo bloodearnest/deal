@@ -8,7 +8,7 @@ from messages import *
 
 class SBBuyer(Buyer):
     def __init__(self, id, node, timeout, rationale, ttl=2):
-        super(SBBuyer, self).__init__("SBBuyer %d" % id)
+        super(SBBuyer, self).__init__(id, node)
         self.id = id
         self.node = node
         self.timeout = timeout
@@ -97,7 +97,7 @@ class SBBuyer(Buyer):
                     if self.rejected == self.quote: # current quote rejected
                         if trace:
                             trace("accept rejected, choosing next quote")
-                        rejected.append(self.quote)
+                        rejected.append(self.quote.job.id)
                         record.record_failure_reason(job.id, "Too Busy Later")
                         self.quote = None
                     elif self.rejected in timedout:
@@ -125,7 +125,7 @@ class SBBuyer(Buyer):
 
         record.record_failure(quote)
 
-        self.node.buyers.remove(self)
+        self.cleanup()
         raise StopIteration
 
     # signalling methods called by messages

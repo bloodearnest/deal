@@ -38,7 +38,6 @@ failure_reasons = [
 for r in failure_reasons:
     failed[r] = 0
         
-job_penetration = defaultdict(int)
 job_penetration_tally = Tally("job penetration")
 
 def record_trade(quote, success=True):
@@ -85,10 +84,7 @@ def _clean_up_job(job):
     njobs += 1
     if job.id in failure_reasons:
         del failure_reasons[job.id]
-    if job.id in job_penetration:
-        p = job_penetration[job.id]
-        del job_penetration[job.id]
-        job_penetration_tally.observe(p)
+    job_penetration_tally.observe(len(job.nodes_visited))
 
 
 

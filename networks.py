@@ -28,8 +28,8 @@ class Node(object):
             raise StandardError("no link and no global latency!")
             
     def confirm_buyer(self, buyer, trace):
-        if buyer not in self.buyers:
-            trace and trace("WARNING: %s not found at %s" % (buyer, self))
+        if buyer not in self.buyers and buyer.id not in self.buyer_ids:
+            trace("WARNING: %s was never at %s" % (buyer, self))
 
     def __str__(self):
         return "node %d" % self.id
@@ -56,7 +56,6 @@ class Node(object):
                     if trace:
                         trace("passing on to %s (ttl %d)" % (dst, ttl))
                     # SimPy requires 1:1 Process:PEM, so we copy
-                    #msg_copy = copy.copy(msg)
                     msg_copy = msg.clone()
                     msg_copy.send_msg(self, dst, ttl=ttl)
                 else:

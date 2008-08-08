@@ -82,3 +82,8 @@ class MessageWithQuote(Message):
     def __init__(self, quote, *a, **kw):
         super(MessageWithQuote, self).__init__(*a, **kw)
         self.quote = quote
+
+    def record(self, node):
+        self.quote.job.nodes_visited.add(node.id)
+
+

@@ -54,8 +54,6 @@ class GridModel(Model):
         self.topology = topology.__name__
 
         self.buyer_ttl = ttl
-        print "set ttl to ", self.buyer_ttl
-
 
         # add model specific components
         for node in self.graph.nodes_iter():
@@ -63,6 +61,7 @@ class GridModel(Model):
             node.resource = GridResource(node, int(resource_sizes()))
             node.seller = None
             node.buyers = set()
+            node.buyer_ids = set()
 
         # do model specific setup
         self.setup()

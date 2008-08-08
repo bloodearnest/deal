@@ -1,5 +1,5 @@
 from SimPy.Simulation import activate, hold, passivate, reactivate, now, Process
-from util import reactivate_on_call
+from util import reactivate_on_call, RingBuffer
 from market import Ask,  Seller
 import record
 from trace import Tracer
@@ -16,7 +16,7 @@ class SBSeller(Seller):
         self.rationale = rationale
         self.active_trades = {}
         self.advert = None
-        self.quoted_jobs = set()
+        self.quoted_jobs = RingBuffer(500)
         self.cancelled_ids = set()
     
     @property
@@ -32,6 +32,7 @@ class SBSeller(Seller):
                 trace = self.trace.add('j%-5s' % job.id)
                 if trace: 
                     trace("advert from %s at %s" % (ad.buyer, ad.buyer.node))
+
                 if job not in self.active_trades:
                     if self.resource.can_allocate(job):
 
@@ -41,7 +42,7 @@ class SBSeller(Seller):
                         private = PrivateQuote(quote)
                         private.send_msg(self.node, quote.buyer.node)
                         
-                        self.quoted_jobs.add(job.id)
+                        self.quoted_jobs.append(job.id)
                         if trace:
                             trace("sending offer %s" % quote)
 

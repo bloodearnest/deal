@@ -86,11 +86,11 @@ class Job(Process):
         super(Job, self).__init__("Job %d" % self.id)
         self.size = size
         self.duration = duration
+        self.nodes_visited = set()
 
     def execute(self, resource):
         yield hold, self, self.duration     # TODO: add runtime variation
         resource.remove(self)
-
 
     @property
     def quantity(self):

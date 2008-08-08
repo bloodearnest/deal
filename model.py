@@ -32,7 +32,7 @@ class Model(object):
                 print "[%s] %02d%% [ETA: %s]" % (now.strftime('%H:%M:%S'),
                                                x,
                                                eta.strftime('%H:%M:%S'))
-                print h.heap()
+                #print h.heap()
                 x += 5
 
     def setup():
