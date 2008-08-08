@@ -1,6 +1,6 @@
 from SimPy.Simulation import activate, hold, passivate, reactivate, now, Process
 from util import reactivate_on_call, RingBuffer
-from market import Ask,  Seller
+from sbmarket import Ask, Seller
 import record
 from trace import Tracer
 from messages import *

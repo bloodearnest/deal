@@ -1,6 +1,6 @@
 from SimPy.Simulation import activate, reactivate, now, hold
 from util import reactivate_on_call
-from market import Bid,  Buyer
+from sbmarket import Bid,  Buyer
 from trace import Tracer
 import record
 
