@@ -25,10 +25,10 @@ if __name__ == '__main__':
     loads =   ('load',        ["%.2f" % (0.2+i*0.2) for i in range(10)])
     sizes =   ('size',        [32,64,128,256,512,1024]) #,2048,4096,8192])
     degrees = ('mean_degree', [2**i for i in range(2,6)])
-    reps = 10
+    reps = 6
 
     #extra = "mean_degree=64"
-    extra = "size=512"
+    extra = " ttl=1"
 
     # exp 1
     name = 'degree-load'

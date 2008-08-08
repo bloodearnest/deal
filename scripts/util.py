@@ -26,7 +26,7 @@ def run_on_host(host, cmd):
 def get_next_job(dir):
     dir = path(dir)
     # big jobs first!
-    for fname in reversed(sorted(dir.listdir(), key=lambda f: f.name)):
+    for fname in sorted(dir.listdir(), key=lambda f: f.name):
         try:
             with filelock(fname) as f:
                 line = f.read()
