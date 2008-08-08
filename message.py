@@ -75,7 +75,7 @@ class Message(Process):
         return "message %d" % self.msgid
 
     #def __del__(self):
-    #    self.log("collected")
+    #    print "msg %d collected" % self.msgid
 
 
 class MessageWithQuote(Message):

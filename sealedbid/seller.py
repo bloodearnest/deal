@@ -54,7 +54,7 @@ class SBSeller(Seller):
                         if trace:
                             trace("resource has no room for job")
                 else:
-                    trace("WARNING: received advert for job already trading for")
+                    trace and trace("WARNING: received advert for job already trading for")
             else:
                 self.trace("WARNING: woken up for unkown reason, no advert")
             self.advert = None
@@ -154,6 +154,7 @@ class SBSeller(Seller):
                 if trace:
                     trace("timed out waiting for response to offer")
 
+            # clean up job record
             del seller.active_trades[job]
 
         @reactivate_on_call

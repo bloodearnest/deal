@@ -20,7 +20,7 @@ class SBModel(GridModel):
 
     def new_buyer(self, job, dst):
         r = trader(True, blimits(), rules)
-        buyer = SBBuyer(job.id, dst, 5, r)
+        buyer = SBBuyer(job.id, dst, 5, r, self.buyer_ttl)
         dst.buyers.add(buyer)
         buyer.start(buyer.trade(job))
         return buyer

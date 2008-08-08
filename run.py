@@ -22,17 +22,20 @@ trace.enabled = False
 fname = path("raw.dat")
 
 for arg in sys.argv[1:]:
-    k,v = arg.split('=')
-    if k == "model":
-        the_model = models[v]
-    elif k == "trace":
-        trace.enabled = eval(v)
-    elif k == "dir":
-        output = path(v)
-    elif k == "file":
-        fname = path(v)
-    else:
-        args[k] = eval(v)
+    try:
+        k,v = arg.split('=')
+        if k == "model":
+            the_model = models[v]
+        elif k == "trace":
+            trace.enabled = eval(v)
+        elif k == "dir":
+            output = path(v)
+        elif k == "file":
+            fname = path(v)
+        else:
+            args[k] = eval(v)
+    except:
+        pass # none = arg
 
 
 m = model(**args)
@@ -43,6 +46,10 @@ r = record.calc_results(m)
 #print results
 report.printr(r)
 report.write(r, output, fname)
+
+from guppy import hpy
+h = hpy()
+print h.heap()
 
 
                   

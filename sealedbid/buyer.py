@@ -7,7 +7,7 @@ import record
 from messages import *
 
 class SBBuyer(Buyer):
-    def __init__(self, id, node, timeout, rationale):
+    def __init__(self, id, node, timeout, rationale, ttl=2):
         super(SBBuyer, self).__init__("SBBuyer %d" % id)
         self.id = id
         self.node = node
@@ -16,6 +16,7 @@ class SBBuyer(Buyer):
         self.valid_quotes = []
         self.invalid_quotes = []
         self.have_received_quote = False
+        self.ttl = ttl
 
 
     def trade(self, job):
@@ -30,8 +31,9 @@ class SBBuyer(Buyer):
         advert = Advert(quote)
 
         if trace:
-            trace("new buyer shouting to %d nodes" % len(self.node.neighbors))
-        self.node.shout_msg(advert, ttl=2)
+            trace("new buyer shouting to %d nodes, ttl %s" 
+                    % (len(self.node.neighbors), self.ttl))
+        self.node.shout_msg(advert, ttl=self.ttl)
 
         tstart = now()
         yield hold, self, self.timeout 
@@ -123,6 +125,7 @@ class SBBuyer(Buyer):
 
         record.record_failure(quote)
 
+        self.node.buyers.remove(self)
         raise StopIteration
 
     # signalling methods called by messages

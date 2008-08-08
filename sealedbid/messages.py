@@ -17,7 +17,7 @@ class PrivateQuote(MessageWithQuote):
     """quote sent to buyer"""
     def process(self, src, dst, trace, **kw):
         b = self.quote.buyer
-        dst.confirm_buyer(b)
+        dst.confirm_buyer(b, trace)
         if b.trace:
             b.trace("got %s" % self.quote.str(b))
         b.receive_quote(self.quote)
@@ -30,13 +30,13 @@ class Accept(MessageWithQuote):
 class Reject(MessageWithQuote):
     """Rejection of acceptance, sent to buyer"""
     def process(self, src, dst, trace, **kw):
-        dst.confirm_buyer(self.quote.buyer)
+        dst.confirm_buyer(self.quote.buyer, trace)
         self.quote.buyer.reject(self.quote)
 
 class Confirm(MessageWithQuote):
     """Confirmation of acceptance, sent to buyer"""
     def process(self, src, dst, trace, **kw):
-        dst.confirm_buyer(self.quote.buyer)
+        dst.confirm_buyer(self.quote.buyer, trace)
         self.quote.buyer.confirm(self.quote)
 
 class Cancel(MessageWithQuote):

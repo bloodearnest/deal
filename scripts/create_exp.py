@@ -22,22 +22,23 @@ def build_workdir(work_dir, rundir, xs, xname, ys, yname, extra='', reps=10):
 if __name__ == '__main__':
 
     # basic values to play with
-    loads =   ('load',        ["%.2f" % (0.2+i*0.2) for i in range(9)])
-    sizes =   ('size',        [2**i for i in range(4,10)])
-    degrees = ('mean_degree', [2**i for i in range(2,8)])
+    loads =   ('load',        ["%.2f" % (0.2+i*0.2) for i in range(10)])
+    sizes =   ('size',        [32,64,128,256,512,1024]) #,2048,4096,8192])
+    degrees = ('mean_degree', [2**i for i in range(2,6)])
     reps = 10
 
-    #extra = "size=1000"
+    #extra = "mean_degree=64"
+    extra = "size=512"
 
     # exp 1
-    #name = 'degree-load'
-    #first = degrees
-    #second = loads
+    name = 'degree-load'
+    first = degrees
+    second = loads
 
     # exp 2
-    name   = 'size-load'
-    first = sizes
-    second = loads
+    #name   = 'size-load'
+    #first = sizes
+    #second = loads
 
     # exp 3
     #name   = 'smallworld'

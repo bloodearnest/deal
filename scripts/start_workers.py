@@ -22,10 +22,11 @@ if __name__ == '__main__':
 
     machines = init()
 
-    cmd = "$HOME/sim/deal/scripts/exec.sh python scripts/manager.py " + sys.argv[1]
+    sd = "$HOME/sim/deal/scripts"
+    cmd = "%s/exec.sh python %s/manager.py 2>&1 1>/dev/null" % (sd, sd) + sys.argv[1]
     for machine in machines:
         if isup(machine):
-            print "launcing manager on", machine
+            print "launching manager on", machine
             launch(machine, cmd)
 
 

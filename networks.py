@@ -27,9 +27,9 @@ class Node(object):
         else:
             raise StandardError("no link and no global latency!")
             
-    def confirm_buyer(self, buyer):
+    def confirm_buyer(self, buyer, trace):
         if buyer not in self.buyers:
-            raise StandardError("%s not found at %s" % (buyer, self))
+            trace and trace("WARNING: %s not found at %s" % (buyer, self))
 
     def __str__(self):
         return "node %d" % self.id

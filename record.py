@@ -120,7 +120,11 @@ def calc_results(model):
     counts["GRID"] += 7
 
     for reason, count in failed.iteritems():
-        results["prop failed by %s" % reason] = count/float(failures.count) * 100
+        r = "prop failed by %s" % reason
+        if failures.count:
+            results[r] = count/float(failures.count) * 100
+        else:
+            results[r] = 0
         counts["GRID"] += 1
 
     # economic stuff

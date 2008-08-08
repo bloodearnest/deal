@@ -1,6 +1,7 @@
 import random
 from datetime import datetime, timedelta
 from SimPy.Simulation import initialize, simulate, hold, Process
+from guppy import hpy
 
 class DummyProcess(Process):
     """A process that does nothing for one second"""
@@ -17,6 +18,7 @@ class Model(object):
 
     class Progress(Process):
         def report(self, until):
+            h = hpy()
             start = datetime.now()
             last = 0
             t = until / 20
@@ -30,6 +32,7 @@ class Model(object):
                 print "[%s] %02d%% [ETA: %s]" % (now.strftime('%H:%M:%S'),
                                                x,
                                                eta.strftime('%H:%M:%S'))
+                print h.heap()
                 x += 5
 
     def setup():

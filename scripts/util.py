@@ -25,12 +25,12 @@ def run_on_host(host, cmd):
 
 def get_next_job(dir):
     dir = path(dir)
-    for fname in dir.listdir():
+    # big jobs first!
+    for fname in reversed(sorted(dir.listdir(), key=lambda f: f.name)):
         try:
             with filelock(fname) as f:
                 line = f.read()
                 fname.unlink()
-                time.sleep(10)
                 return line
         except IOError: # either already locked or does not exist
             pass

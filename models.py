@@ -14,7 +14,7 @@ class GridModel(Model):
                  load=1.0,
                  run_times=3,
                  arrival_dist = dists.expon,
-                 mean_degree=2,
+                 mean_degree=4,
                  resource_sizes = dists.gamma(100),
                  job_sizes = dists.gamma(20),
                  job_durations = dists.gamma(100),
@@ -24,7 +24,8 @@ class GridModel(Model):
                  latency_dist = dists.gamma,
                  global_latency = dists.gamma(0.1),
                  topology = None,
-                 latencies = None):
+                 latencies = None,
+                 ttl = 2):
 
 
         # calculated results
@@ -51,6 +52,9 @@ class GridModel(Model):
         self.size = size
         self.load = load
         self.topology = topology.__name__
+
+        self.buyer_ttl = ttl
+        print "set ttl to ", self.buyer_ttl
 
 
         # add model specific components
