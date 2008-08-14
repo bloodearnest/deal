@@ -1,9 +1,9 @@
 import random
 from model import Model
-from networks import Node, generate_network, Topologies, Latencies
 from grid import Server, GridResource, Job
 from stats import dists
 import record
+import network
 
 #from messages import BroadcastMessage
 
@@ -23,7 +23,6 @@ class GridModel(Model):
                  latency_means = dists.normal(0.1),
                  latency_dist = dists.gamma,
                  global_latency = dists.gamma(0.1),
-                 topology = None,
                  latencies = None,
                  ttl = 2):
 
@@ -38,21 +37,21 @@ class GridModel(Model):
         self.job_sizes = job_sizes
         self.job_durations = job_durations
 
-        # defaults
-        topology = topology or Topologies.random_by_degree(size, mean_degree);
-        latencies = latencies or Latencies.random(latency_means, latency_dist)
-
         # generate network
-        self.graph = generate_network(topology, draw=True)
-        self.graph.global_latency = global_latency
-        # add latency weights to graph
-        latencies(self.graph)
+        self.graph = network.Network(
+                mean_degree,
+                (100,100),
+                (3,3),
+                latency_means,
+                global_latency,
+                latency_dist)
+        
+        network.generate_nodes(self.graph, size)
+        network.generate_topology(self.graph)
         
         # store for stats
         self.size = size
         self.load = load
-        self.topology = topology.__name__
-
         self.buyer_ttl = ttl
 
         # add model specific components
@@ -65,6 +64,8 @@ class GridModel(Model):
 
         # do model specific setup
         self.setup()
+
+        self.topology = "random"
 
     @property
     def nodes(self):

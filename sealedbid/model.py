@@ -1,5 +1,4 @@
 import random
-import networks
 from models import GridModel
 from market import MarketRules
 from traders import ZIC, ZIP
