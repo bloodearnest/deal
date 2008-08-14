@@ -8,11 +8,8 @@ from messages import *
 
 class SBBuyer(Buyer):
     def __init__(self, id, node, timeout, rationale, ttl=2):
-        super(SBBuyer, self).__init__(id, node)
-        self.id = id
-        self.node = node
+        super(SBBuyer, self).__init__(id, node, rationale)
         self.timeout = timeout
-        self.rationale = rationale
         self.valid_quotes = []
         self.invalid_quotes = []
         self.have_received_quote = False

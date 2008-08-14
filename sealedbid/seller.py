@@ -9,7 +9,7 @@ from messages import *
 class SBSeller(Seller):
 
     def __init__(self, id, node, timeout, rationale, *a, **kw):
-        super(SBSeller, self).__init__("SBSeller %d" % id)
+        super(SBSeller, self).__init__(id, node, rationale)
         self.id = id
         self.node = node
         self.timeout = timeout
