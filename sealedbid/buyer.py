@@ -18,17 +18,19 @@ class SBBuyer(Buyer):
 
     def trade(self):
         """The Buyers PEM"""
+
+        # some shrotcuts
         job = self.job
-        self.trace = trace = Tracer(self.node).add('sbb%-5d' % self.id).add('j%-5d' % job.id)
+        trace = self.trace
 
         # initial advert and quote
         # TODO: add a initial buyer quoted price?
         quote = Bid(self, None, job, None)
         advert = Advert(quote)
 
-        if trace:
-            trace("new buyer shouting to %d nodes, ttl %s" 
-                    % (len(self.node.neighbors), self.ttl))
+        trace and trace("new buyer shouting to %d nodes, ttl %s" 
+                % self.node.degree, self.ttl)
+
         self.node.shout_msg(advert, ttl=self.ttl)
 
         tstart = now()
@@ -38,30 +40,29 @@ class SBBuyer(Buyer):
             if trace:
                 trace("buyer time out reset")
             yield hold, self, self.timeout
-            
-        if trace:
-            trace("buyer timed out")
+        
+        # finally timed out with now new messages.
+        trace and trace("buyer timed out")
         record.buyer_timeouts.observe(now() - tstart)
 
         # store quotes that have timed out
         timedout = []
         rejected = []
 
-        while self.valid_quotes: # list of valid
+        while self.valid_quotes:
+
             self.rejected = self.confirmed = False
 
             # sort quotes (we may have got other quotes in the mean time)
             self.valid_quotes.sort(key=lambda q: q.price)
-            if trace:
-                trace("have %d quotes" % len(self.valid_quotes))
+            trace and trace("have %d quotes" % len(self.valid_quotes))
 
             self.quote = self.valid_quotes.pop(0) # cheapest quote
 
             # accept the cheapest quote
             accept = Accept(self.quote)
             accept.send_msg(self.node, self.quote.seller.node)
-            if trace:
-                trace("accepting best ask: %s" % self.quote.str(self))
+            trace and trace("accepting best ask: %s" % self.quote.str(self))
 
             # store our maximum time out
             target_time = now() + self.timeout

@@ -31,7 +31,7 @@ def generative_link(G, node, p_local):
 def generative_topology(G, p_local = 0.7):
     nodes = G.nodes()
     size = len(nodes)
-    max_edges = size * G.mean_degree / 2
+    max_edges = size * G.mean_degree / 2 # 1 ling = +2 degrees!
     
     # give everyone a link
     for node in nodes:

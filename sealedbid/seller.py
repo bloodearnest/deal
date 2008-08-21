@@ -15,12 +15,12 @@ class SBSeller(Seller):
         self.advert = None
         self.quoted_jobs = RingBuffer(500)
         self.cancelled_ids = set()
+        self.trace.add('sbs%-5s' % self.id)
     
     @property
     def resource(self): return self.node.resource
 
     def trade(self):
-        self.trace = Tracer(self.node).add('sbs%-5s' % self.id)
         while 1:
             yield passivate, self
             if self.advert:

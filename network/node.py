@@ -18,6 +18,10 @@ class Node(object):
     @property
     def neighbors(self):
         return self.graph.neighbors(self)
+    
+    @property
+    def degree(self):
+        return len(self.neighbors)
 
     def generate_latency(self, other):
         if self.graph.has_edge(self, other):

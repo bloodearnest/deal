@@ -1,6 +1,6 @@
 import math
 from SimPy.Simulation import Process
-import trace
+from trace import Tracer
 
 def normalise_price(p):
     """normalise to 2dp"""
@@ -43,6 +43,13 @@ class Buyer(Trader):
         self.node.buyer_ids.add(self.id)
 
     def init_trading(self):
+
+        # set up trace for new node
+        self.trace = Tracer(self.node)
+        self.trace.add('%s%-5d' % (self.__class__, self.id))
+        self.trace.add('j%-5d' % self.job.id)
+
+        # add to new node
         self.node.buyers.add(self)
         self.start(self.trade())
 
@@ -54,7 +61,7 @@ class Buyer(Trader):
         self.remove_from_node()
         
         # choose another node in a different region
-        others = [n for n in self.graph.nodes() if n.region != old_node.region]
+        others = [n for n in self.graph.nodes() if n.region != self.region]
         other = random.choice(others)
 
         self.start_on(other)
@@ -78,6 +85,7 @@ class Seller(Trader):
     def __init__(self, id, rationale, node):
         Trader.__init__(self, id, rationale)
         self.node = node
+        self.trace = Tracer(node)
     
     @property
     def resource(self):
