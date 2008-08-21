@@ -1,5 +1,5 @@
-import math
-from SimPy.Simulation import Process
+import math, random
+from SimPy.Simulation import Process, hold
 from trace import Tracer
 
 def normalise_price(p):
@@ -41,6 +41,7 @@ class Buyer(Trader):
     def __init__(self, id, rationale, job):
         Trader.__init__(self, id, rationale)
         self.job = job
+        self.migrations = 0
 
     def remove_from_node(self):
         self.trace and self.trace("removing from %s" % self.node)
@@ -56,19 +57,32 @@ class Buyer(Trader):
 
         # add to new node
         self.node.buyers.add(self)
-        self.start(self.trade())
+
+        self.process = self.TradeProcess(self)
+        self.process.start(self.process.trade())
 
     def finish_trading(self):
         self.remove_from_node()
         self.active = False
+
+    class CancelProcess(Process):
+        def pem(self, process):
+            yield hold, self, 0.00001
+            self.cancel(process)
+
 
     def migrate(self):
         self.trace and self.trace("migrating")
         self.remove_from_node()
         
         # choose another node in a different region
-        others = [n for n in self.graph.nodes() if n.region != self.region]
+        others = [n for n in self.node.graph.nodes_iter() 
+                  if n.region != self.node.region]
         other = random.choice(others)
+
+        #cancel any events (there shouldn't be, but just in case)
+        p = self.CancelProcess()
+        p.start(p.pem(self.process))
 
         self.trace and self.trace("moving to %s" % other)
         self.start_on(other)
