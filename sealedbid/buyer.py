@@ -7,8 +7,8 @@ import record
 from messages import *
 
 class SBBuyer(Buyer):
-    def __init__(self, id, node, timeout, rationale, ttl=2):
-        super(SBBuyer, self).__init__(id, node, rationale)
+    def __init__(self, id, rationale, job, timeout, ttl=2):
+        super(SBBuyer, self).__init__(id, rationale, job)
         self.timeout = timeout
         self.valid_quotes = []
         self.invalid_quotes = []
@@ -16,11 +16,10 @@ class SBBuyer(Buyer):
         self.ttl = ttl
 
 
-    def trade(self, job):
+    def trade(self):
         """The Buyers PEM"""
+        job = self.job
         self.trace = trace = Tracer(self.node).add('sbb%-5d' % self.id).add('j%-5d' % job.id)
-
-        adverts = 0
 
         # initial advert and quote
         # TODO: add a initial buyer quoted price?
@@ -122,7 +121,7 @@ class SBBuyer(Buyer):
 
         record.record_failure(quote)
 
-        self.cleanup()
+        self.finish_trading()
         raise StopIteration
 
     # signalling methods called by messages

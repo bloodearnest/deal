@@ -1,5 +1,5 @@
 import math
-from SimPy.Simulation import reactivate, Tally
+from SimPy.Simulation import reactivate, Tally, Monitor
 
 sortedtuple = lambda *x: tuple(sorted(x))
 
@@ -39,9 +39,9 @@ class RingBuffer(list):
 class JobTracker(object):
     def __init__(self, name):
         self.name = name
-        self.sizes = Tally(name + " job sizes")
-        self.limits = Tally(name + " buyer limits")
-        self.degrees = Tally(name + " buyer node degrees")
+        self.sizes = Monitor(name + " job sizes")
+        self.limits = Monitor(name + " buyer limits")
+        self.degrees = Monitor(name + " buyer node degrees")
 
     def record(self, quote):
         self.sizes.observe(quote.job.size)

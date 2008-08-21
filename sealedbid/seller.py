@@ -8,12 +8,9 @@ from messages import *
 
 class SBSeller(Seller):
 
-    def __init__(self, id, node, timeout, rationale, *a, **kw):
-        super(SBSeller, self).__init__(id, node, rationale)
-        self.id = id
-        self.node = node
+    def __init__(self, id, rationale, node, timeout, *a, **kw):
+        super(SBSeller, self).__init__(id, rationale, node)
         self.timeout = timeout
-        self.rationale = rationale
         self.active_trades = {}
         self.advert = None
         self.quoted_jobs = RingBuffer(500)

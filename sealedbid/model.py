@@ -17,17 +17,17 @@ trader = ZIP
 
 class SBModel(GridModel):
 
-    def new_buyer(self, job, dst):
+    def new_buyer(self, job, node):
         r = trader(True, blimits(), rules)
-        buyer = SBBuyer(job.id, dst, 5, r, self.buyer_ttl)
-        buyer.start(buyer.trade(job))
+        buyer = SBBuyer(job.id, r, job, 5, ttl=self.buyer_ttl)
+        buyer.start_on(node)
         return buyer
 
     def setup(self):
         for n in self.graph.nodes_iter():
             r = trader(False, slimits(), rules)
             r.price = random.randint(r.limit, rules.max)
-            n.seller = SBSeller(n.id, n, 60, r, rules)
+            n.seller = SBSeller(n.id, r, n, 60)
 
 
 

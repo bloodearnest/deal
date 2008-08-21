@@ -1,33 +1,49 @@
 import math, random
 
-def local_link(p_local):
-    def get_link(G, nodes, node):
-        nds = nodes
-        if random.random() < p_local:
-            nds = [n for n in nodes if n.region == node.region and n != node]
-            if len(nds) == 0:
-                nds = nodes 
-        return random.choice(nds)
-    return get_link
+class FullyConnectedNode(StandardError):
+    pass
 
-def generate_topology(G, get_link=local_link(0.6)):
+def generative_link(G, node, p_local):
+    # discount self and neighbors
+    all_nodes = G.nodes()
+    all_nodes.remove(node)
+    for n in node.neighbors:
+        all_nodes.remove(n)
 
-    nodes = list(G.nodes())
-    max_edges = len(nodes) * G.mean_degree
 
+    if random.random() < p_local: # local
+        nds = [n for n in all_nodes if n.region == node.region]
+    else: # global
+        nds = [n for n in all_nodes if n.region != node.region]
+
+    if not nds:
+        nds = all_nodes
+    
+    if not all_nodes:
+        print len(node.neighbors)
+        print len([n for n in all_nodes if n.region == node.region])
+        print len([n for n in all_nodes if n.region != node.region])
+        raise FullyConnectedNode()
+
+    return random.choice(nds)
+
+
+def generative_topology(G, p_local = 0.7):
+    nodes = G.nodes()
+    size = len(nodes)
+    max_edges = size * G.mean_degree / 2
+    
+    # give everyone a link
     for node in nodes:
-        other = get_link(G, nodes, node)
-        latency = G.latency_function(node, other)
-        G.add_edge(node, other, latency)
-
-    edges = len(nodes)
-
+            G.make_link(node, generative_link(G, node, p_local))
+        
+    edges = size
     while edges < max_edges:
         node = random.choice(nodes)
-        other = get_link(G, nodes, node)
-        latency = G.latency_function(node, other)
-        G.add_edge(node, other, latency)
+        G.make_link(node, generative_link(G, node, p_local))
         edges += 1
+
+
 
 
 

@@ -25,7 +25,7 @@ for arg in sys.argv[1:]:
     try:
         k,v = arg.split('=')
         if k == "model":
-            the_model = models[v]
+            model = models[v]
         elif k == "trace":
             trace.enabled = eval(v)
         elif k == "dir":

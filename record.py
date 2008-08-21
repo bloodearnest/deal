@@ -1,11 +1,13 @@
 import math
 from collections import defaultdict
 from odict import OrderedDict
-
+import networkx
+from scipy import stats as scipy
+import numpy
 import stats
 import equilibrium
 
-from SimPy.Simulation import now, Tally
+from SimPy.Simulation import now, Tally, Monitor
 
 from util import JobTracker
 
@@ -107,13 +109,27 @@ def calc_results(model):
 
     # failure issues
     results["prop failed"] = failures.count / float(njobs) * 100
-    results["failed_sizes"] = failures.sizes.mean()
-    results["failed_limits"] = failures.limits.mean()
-    results["failed_degrees"] = failures.degrees.mean()
-    results["succeeded_sizes"] = successes.sizes.mean()
-    results["succeeded_limits"] = successes.limits.mean()
-    results[ "succeeded_degrees"] = successes.degrees.mean()
-    counts["GRID"] += 7
+
+    
+    results["failed_sizes_mean"] = failures.sizes.mean()
+    results["failed_sizes_skew"] = scipy.skew([n[1] for n in failures.sizes])
+
+    results["failed_limits_mean"] = failures.limits.mean()
+    results["failed_limits_skew"] = scipy.skew([n[1] for n in failures.limits])
+
+    results["failed_degrees_mean"] = failures.degrees.mean()
+    results["failed_degrees_skew"] = scipy.skew([n[1] for n in failures.degrees])
+
+    results["succeeded_sizes_mean"] = successes.sizes.mean()
+    results["succeeded_sizes_skew"] = scipy.skew([n[1] for n in successes.sizes])
+    
+    results["succeeded_limits_mean"] = successes.limits.mean()
+    results["succeeded_limits_skew"] = scipy.skew([n[1] for n in successes.limits])
+    
+    results["succeeded_degrees_mean"] = successes.degrees.mean()
+    results["succeeded_degrees_skew"] = scipy.skew([n[1] for n in successes.degrees])
+
+    counts["GRID"] += 13
 
     for reason, count in failed.iteritems():
         r = "prop failed by %s" % reason
@@ -141,6 +157,16 @@ def calc_results(model):
     results["mean buyer util"] = buyer_util.mean()
     results["mean seller util"] = seller_util.mean()
     counts["ECO"] += 5
+
+    G = model.graph
+    results["density"] = networkx.density(G)
+    results["mean_degree"] = sum(len(n.neighbors) for n in G.nodes_iter()) / float(G.order())
+    results["degree_skew"] = scipy.skew(networkx.degree(G))
+    results["diameter"] = float(networkx.diameter(G))
+    results["radius"] = float(networkx.radius(G))
+    results["transitivity"] = float(networkx.transitivity(G))
+    counts["NET"] += 6
+
 
     return results
  

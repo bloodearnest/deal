@@ -26,12 +26,18 @@ class Network(XGraph):
         self.max_distance = math.sqrt((self.coord_space[0]/2)**2 + 
                                       (self.coord_space[1]/2)**2 ) 
 
+
     def latency_function(self, node1, node2):
         distance = wrapped_distance(node1.location, node2.location, self.coord_space)
         real_mean = self.local_latencies()
         w = distance / self.max_distance
         mean =  real_mean * (1 - self.distance_weight + self.distance_weight * w)
         return self.latency_dist(mean)
+
+    def make_link(self, node, other):
+        latency = self.latency_function(node, other)
+        self.add_edge(node, other, latency)
+
 
 
 def generate_nodes(G, n):

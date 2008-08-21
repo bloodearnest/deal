@@ -24,7 +24,7 @@ class GridModel(Model):
                  latency_dist = dists.gamma,
                  global_latency = dists.gamma(0.1),
                  latencies = None,
-                 ttl = 2):
+                 ttl = 1):
 
 
         # calculated results
@@ -47,7 +47,8 @@ class GridModel(Model):
                 latency_dist)
         
         network.generate_nodes(self.graph, size)
-        network.generate_topology(self.graph)
+        network.generative_topology(self.graph)
+        self.topology = "generative"
         
         # store for stats
         self.size = size
@@ -65,7 +66,6 @@ class GridModel(Model):
         # do model specific setup
         self.setup()
 
-        self.topology = "random"
 
     @property
     def nodes(self):
@@ -89,10 +89,10 @@ class GridModel(Model):
     def start(self, *a, **kw):
         time = kw["until"]
         for n in self.graph.nodes_iter():
-            n.seller.start(n.seller.trade())
             record.sells_theory.append((n.seller.limit,
                                         n.resource.capacity * time,
                                         0))
+            n.seller.start_on(n)
         super(GridModel, self).start(*a, **kw)
 
         

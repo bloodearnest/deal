@@ -14,15 +14,21 @@ def printr(results):
     a = record.counts["GENERAL"]
     b = a + record.counts["GRID"] 
     c = b + record.counts["ECO"] 
+    d = c + record.counts["NET"]
 
     print "Grid:"
     for k,v in results.items()[a:b]:
-        print " - %s: %0.2f" % (k,v)
+        print " - %s: %s" % (k,v)
 
     print
     print "Economy:"
-    for k,v in results.items()[b:]:
-        print " - %s: %0.2f" % (k,v)
+    for k,v in results.items()[b:c]:
+        print " - %s: %s" % (k,v)
+
+    print
+    print "Network:"
+    for k,v in results.items()[c:]:
+        print " - %s: %s" % (k,v)
 
 def write(results, out, fname):
     

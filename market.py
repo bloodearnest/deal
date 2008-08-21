@@ -1,5 +1,6 @@
 import math
 from SimPy.Simulation import Process
+import trace
 
 def normalise_price(p):
     """normalise to 2dp"""
@@ -10,11 +11,11 @@ class MarketRules(object):
     pass
 
 
+
 class Trader(Process):
-    def __init__(self, id, node, rationale):
+    def __init__(self, id, rationale):
         Process.__init__(self, "%s %s" % (self.__class__, id))
         self.id = id
-        self.node = node
         self.rationale = rationale
         self.active = True
         # init price
@@ -24,16 +25,39 @@ class Trader(Process):
     def limit(self):
         return self.rationale.limit
 
+    def start_on(self, node):
+        self.node = node
+        self.init_trading()
+
+    def trade(self):
+        raise StopIteration
+
 
 class Buyer(Trader):
-    def __init__(self, id, node, rationale):
-        Trader.__init__(self, id, node, rationale)
-        node.buyers.add(self)
+    def __init__(self, id, rationale, job):
+        Trader.__init__(self, id, rationale)
+        self.job = job
 
-    def cleanup(self):
+    def remove_from_node(self):
         self.node.buyers.remove(self)
-        self.active = False
         self.node.buyer_ids.add(self.id)
+
+    def init_trading(self):
+        self.node.buyers.add(self)
+        self.start(self.trade())
+
+    def finish_trading(self):
+        self.remove_from_node()
+        self.active = False
+
+    def migrate(self):
+        self.remove_from_node()
+        
+        # choose another node in a different region
+        others = [n for n in self.graph.nodes() if n.region != old_node.region]
+        other = random.choice(others)
+
+        self.start_on(other)
  
     # utility function
     def create_quote(self):
@@ -51,12 +75,16 @@ class Buyer(Trader):
 
 
 class Seller(Trader):
-    def __init__(self, id, node, rationale):
-        Trader.__init__(self, id, node, rationale)
+    def __init__(self, id, rationale, node):
+        Trader.__init__(self, id, rationale)
+        self.node = node
     
     @property
     def resource(self):
         return self.node.resource
+
+    def init_trading(self):
+        self.start(self.trade())
  
     # utility function
     def create_quote(self):
