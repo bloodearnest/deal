@@ -13,8 +13,8 @@ class Model(object):
     class Generator(Process):
         def generate(self, model):
             while 1:
-                model.new_process()
                 yield hold, self, model.inter_arrival_time()
+                model.new_process()
 
     class Progress(Process):
         def report(self, until):

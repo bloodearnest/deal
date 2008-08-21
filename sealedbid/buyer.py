@@ -29,7 +29,7 @@ class SBBuyer(Buyer):
         advert = Advert(quote)
 
         trace and trace("new buyer shouting to %d nodes, ttl %s" 
-                % self.node.degree, self.ttl)
+                % (self.node.degree, self.ttl))
 
         self.node.shout_msg(advert, ttl=self.ttl)
 

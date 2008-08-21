@@ -25,7 +25,7 @@ class Message(Process):
 
     def send(self, src, dst, **kw):
         self.history.add(dst)
-        trace = Tracer(dst).add('m%-7d' % self.msgid)
+        trace = Tracer(dst).add('m%-11d' % self.msgid)
 
         if src != None:
             latency = src.generate_latency(dst)

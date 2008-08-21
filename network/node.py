@@ -46,7 +46,7 @@ class Node(object):
 
     def shout_msg(self, msg, *a, **kw):
         ttl = kw.get('ttl', 0)
-        trace = Tracer(self).add('m%-7d' % msg.msgid)
+        trace = Tracer(self).add('m%-11d' % msg.msgid)
 
         if ttl > 0:
             # send copy of the same message on to all neighbours

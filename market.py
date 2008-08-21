@@ -14,7 +14,7 @@ class MarketRules(object):
 
 class Trader(Process):
     def __init__(self, id, rationale):
-        Process.__init__(self, "%s %s" % (self.__class__, id))
+        Process.__init__(self, "%s %d" % (self.__class__, id))
         self.id = id
         self.rationale = rationale
         self.active = True
@@ -28,9 +28,13 @@ class Trader(Process):
     def start_on(self, node):
         self.node = node
         self.init_trading()
+        self.trace and self.trace("starting on %s" % node)
 
     def trade(self):
         raise StopIteration
+
+    def __str__(self):
+        return "%s %d" % (self.__class__.__name__, self.id)
 
 
 class Buyer(Trader):
@@ -39,6 +43,7 @@ class Buyer(Trader):
         self.job = job
 
     def remove_from_node(self):
+        self.trace and self.trace("removing from %s" % self.node)
         self.node.buyers.remove(self)
         self.node.buyer_ids.add(self.id)
 
@@ -46,8 +51,8 @@ class Buyer(Trader):
 
         # set up trace for new node
         self.trace = Tracer(self.node)
-        self.trace.add('%s%-5d' % (self.__class__, self.id))
-        self.trace.add('j%-5d' % self.job.id)
+        self.trace = self.trace.add('%-12s' % self)
+        self.trace = self.trace.add('j%-5d' % self.job.id)
 
         # add to new node
         self.node.buyers.add(self)
@@ -58,12 +63,14 @@ class Buyer(Trader):
         self.active = False
 
     def migrate(self):
+        self.trace and self.trace("migrating")
         self.remove_from_node()
         
         # choose another node in a different region
         others = [n for n in self.graph.nodes() if n.region != self.region]
         other = random.choice(others)
 
+        self.trace and self.trace("moving to %s" % other)
         self.start_on(other)
  
     # utility function
@@ -86,6 +93,7 @@ class Seller(Trader):
         Trader.__init__(self, id, rationale)
         self.node = node
         self.trace = Tracer(node)
+        self.trace = self.trace.add('%-12s' % self)
     
     @property
     def resource(self):
