@@ -41,6 +41,7 @@ for r in failure_reasons:
     failed[r] = 0
         
 job_penetration_tally = Tally("job penetration")
+migrations = Tally("migrations")
 
 def record_trade(quote, success=True):
     t = now()
@@ -57,30 +58,26 @@ def record_trade(quote, success=True):
     buyer_util.observe(quote.buyer.limit - quote.price)
     seller_util.observe(quote.price - quote.seller.limit)
 
-    _clean_up_job(quote.job)
-
 def record_failure(quote):
     failures.record(quote)
     reasons = failure_reasons_record[quote.job.id]
 
-    rcount = defaultdict(float)
-    for r in failure_reasons:
-        if r in reasons:
-            rcount[r] += (1 / float(len(reasons)))
-        else:
-            rcount[r] = 0
+    rcount = dict()
+    total_reasons = float(len(reasons))
+    for reason in failure_reasons:
+        total = len([r for r in reasons if r == reason])
+        rcount[reason] = total / total_reasons
 
-    for r in rcount:
-        failed[r] += rcount[r]
+    for reason in rcount:
+        failed[reason] += rcount[reason]
         
-    _clean_up_job(quote.job)
 
 def record_failure_reason(jobid, reason):
     assert reason in failure_reasons
     failure_reasons_record[jobid].append(reason)
 
 
-def _clean_up_job(job):
+def clean_up_job(job):
     # clear up the memory using in tracking this job
     global njobs
     njobs += 1
@@ -109,6 +106,7 @@ def calc_results(model):
 
     # failure issues
     results["prop failed"] = failures.count / float(njobs) * 100
+    results["mean_migrations"] = migrations.mean() / float(njobs) * 100
 
     
     results["failed_sizes_mean"] = failures.sizes.mean()
@@ -129,7 +127,7 @@ def calc_results(model):
     results["succeeded_degrees_mean"] = successes.degrees.mean()
     results["succeeded_degrees_skew"] = scipy.skew([n[1] for n in successes.degrees])
 
-    counts["GRID"] += 13
+    counts["GRID"] += 14
 
     for reason, count in failed.iteritems():
         r = "prop failed by %s" % reason

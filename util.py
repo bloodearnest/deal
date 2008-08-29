@@ -20,6 +20,8 @@ class RingBuffer(list):
         def tolist(self):
             """ return list of elements in correct order. """
             return self[self.cur:] + self[:self.cur]
+        
+        add = append
 
     def append(self, x):
         """ append an element at the end of the buffer. """

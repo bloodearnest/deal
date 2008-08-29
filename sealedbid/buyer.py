@@ -22,7 +22,7 @@ class SBBuyer(Buyer):
 
     def start(self):
         super(SBBuyer, self).start()
-        self.has_timeout = False
+        self.has_timedout = False
         self.current_quote = self.advertise()
 
     def advertise(self):
@@ -90,19 +90,15 @@ class SBBuyer(Buyer):
                 self.migrate()
             else:
                 self.trace and self.trace("no more migrations allowed!")
-                if (len(self.rejected) + len(self.timedout) == 0 and 
-                        len(self.invalid_quotes) > 0):
-                    record.record_failure_reason(job.id, "High Buyer Limit")
-                record.record_failure(quote)
+                self.record_failure()
                 self.finish_trading()
                 self.cancel_all()
 
-
-    #internal AcceptProcess interface
+#internal AcceptProcess interface
     def confirm_received(self, confirm):
         if confirm == self.current_quote: # current quote confirmed
             self.trace and self.trace("accept confirmed")
-            record.record_trade(confirm, True)
+            self.record_success(confirm)
             self.finish_trading()
             self.cancel_all()
             self.accept_process = None
@@ -130,7 +126,7 @@ class SBBuyer(Buyer):
             self.trace and self.trace("accept rejected, but had already timed out")
         else:
             self.trace("WARNING: got reject for unknown quote: %s" 
-                    % reject.str(buyer))
+                    % reject.str(self))
    
 
     def accept_timedout(self, accept):
@@ -142,6 +138,24 @@ class SBBuyer(Buyer):
         self.current_quote = None
         self.accept_process = None
         self.accept_best_quote()
+
+
+
+    def record_failure(self):
+        if (len(self.rejected) + len(self.timedout) == 0 and 
+                len(self.invalid_quotes) > 0):
+            record.record_failure_reason(self.job.id, "High Buyer Limit")
+        quote = Bid(self, None, self.job, self.price)
+        record.record_failure(quote)
+        record.migrations.observe(self.migrations)
+        record.clean_up_job(self.job)
+
+    def record_success(self, quote):
+        record.record_trade(quote, True)
+        record.migrations.observe(self.migrations)
+        record.clean_up_job(self.job)
+
+
 
 
 
