@@ -42,12 +42,12 @@ class GridResource(object):
     def can_allocate(self, job):
         return job.size <= self.free
 
-    def start(self, job):
+    def start(self, job, confirm_process):
         assert self.can_allocate(job)
         self.jobs.add(job)
         self.util.observe(self.load)
         # the job will complete and remove itself at the right time
-        job.start(job.execute(self))
+        job.start(job.execute(self, confirm_process))
 
     def cancel(self, job):
         self.remove(job)
@@ -88,9 +88,11 @@ class Job(Process):
         self.duration = duration
         self.nodes_visited = set()
 
-    def execute(self, resource):
+    def execute(self, resource, confirm_process):
         yield hold, self, self.duration     # TODO: add runtime variation
         resource.remove(self)
+        confirm_process.signal("complete")
+
 
     @property
     def quantity(self):

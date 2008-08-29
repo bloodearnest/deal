@@ -1,163 +1,149 @@
 from SimPy.Simulation import activate, reactivate, now, hold, Process
-from util import reactivate_on_call
-from sbmarket import Bid,  Buyer
 from trace import Tracer
 import record
 
+from market import Bid
 from messages import *
+from traders.buyer import Buyer
+from traders.processes import *
 
 class SBBuyer(Buyer):
-    def __init__(self, id, rationale, job, timeout, ttl=2):
-        super(SBBuyer, self).__init__(id, rationale, job)
-        self.timeout = timeout
+    def __init__(self, id, rationale, job, ttl=2, **kw):
+        super(SBBuyer, self).__init__(id, rationale, job, **kw)
         self.ttl = ttl
-        self.process = None
+        self.timedout = set()
+        self.rejected = set()
 
-    class TradeProcess(Process):
-        def __init__(self, buyer):
-            super(SBBuyer.TradeProcess, self).__init__(
-                    "TradeProcess %d" % buyer.id) 
-            self.buyer = buyer
-            self.valid_quotes = []
-            self.invalid_quotes = []
-            self.have_received_quote = False
+        self.has_timedout = False
 
-        def trade(self):
-            """The Buyers PEM"""
-            buyer = self.buyer
+        self.valid_quotes = []
+        self.invalid_quotes = []
+        self.have_received_quote = False
 
-            # some shrotcuts
-            job = buyer.job
-            trace = buyer.trace
+    def start(self):
+        super(SBBuyer, self).start()
+        self.has_timeout = False
+        self.current_quote = self.advertise()
 
-            # initial advert and quote
-            # TODO: add a initial buyer quoted price?
-            quote = Bid(buyer, None, job, None)
-            advert = Advert(quote)
+    def advertise(self):
+        # initial advert and quote
+        # TODO: add a initial buyer quoted price?
+        quote = Bid(self, None, self.job, None)
+        advert = Advert(quote)
+        self.trace and self.trace("buyer shouting to %d nodes, ttl %s" 
+                % (self.node.degree, self.ttl))
+        self.node.shout_msg(advert, ttl=self.ttl)
+        return quote
 
-            trace and trace("new buyer shouting to %d nodes, ttl %s" 
-                    % (buyer.node.degree, buyer.ttl))
-
-            buyer.node.shout_msg(advert, ttl=buyer.ttl)
-
-            tstart = now()
-            yield hold, self, buyer.timeout 
-            while self.have_received_quote:
-                self.have_received_quote = False
-                if trace:
-                    trace("buyer time out reset")
-                yield hold, self, buyer.timeout
+    # internal ListenProcess interface
+    def quote_received(self, quote):
+        if quote.price <= self.limit:
+            self.valid_quotes.append(quote)
+        else:
+            self.invalid_quotes.append(quote)
             
-            # finally timed out with now new messages.
-            trace and trace("buyer timed out")
-            record.buyer_timeouts.observe(now() - tstart)
+        self.trace and self.trace("got %s" % (quote.str(self)))
+        self.trace and self.trace("buyer timeout reset")
 
-            # store quotes that have timed out
-            timedout = []
-            rejected = []
+    # diable accept, cancel, complete as in sealedbid they are seller only
+    accept = Buyer.disable("accept")
+    cancel = Buyer.disable("cancel")
+    complete = Buyer.disable("complete")
 
-            while self.valid_quotes:
-
-                self.rejected = self.confirmed = False
-
-                # sort quotes (we may have got other quotes in the mean time)
-                self.valid_quotes.sort(key=lambda q: q.price)
-                trace and trace("have %d quotes" % len(self.valid_quotes))
-
-                self.quote = self.valid_quotes.pop(0) # cheapest quote
-
-                # accept the cheapest quote
-                accept = Accept(self.quote)
-                accept.send_msg(buyer.node, self.quote.seller.node)
-                trace and trace("accepting best ask: %s" % self.quote.str(buyer))
-
-                # store our maximum time out
-                target_time = now() + buyer.timeout
-
-                while self.quote: # quote still valid
-
-                    # this can be interupted
-                    yield hold, self, target_time - now()
-
-                    if self.confirmed: # received confirm message
-                        if self.confirmed == self.quote: # current quote confirmed
-                            if trace: 
-                                trace("accept confirmed")
-                            record.record_trade(self.confirmed, True)
-
-                            raise StopIteration # we are done!
-
-                        elif self.confirmed in timedout: # old quote confirms
-                            if trace:
-                                trace("got confirm from timed out quote")
-                            # TODO: may want to go with this confirm instead, as it
-                            # was probably better than the current one
-                        else: # unknown confirm
-                            trace("WARNING: got random confirm: %s" 
-                                    % self.confirmed.str(buyer))
-                        self.confirmed = False
-
-                    elif self.rejected: # got a rejection message
-                        if self.rejected == self.quote: # current quote rejected
-                            if trace:
-                                trace("accept rejected, choosing next quote")
-                            rejected.append(self.quote.job.id)
-                            record.record_failure_reason(job.id, "Too Busy Later")
-                            self.quote = None
-                        elif self.rejected in timedout:
-                            # reject from quote already timed out
-                            if trace: 
-                                trace("accept rejected, but had already timed out")
-                        elif trace:
-                            trace("WARNING: got reject for unknown quote: %s" %
-                                    self.rejected.str(buyer))
-                        self.rejected = False
-
-                    else: # timed out
-                        if trace:
-                            trace("timed out, sending cancel")
-                        cancel = Cancel(self.quote)
-                        cancel.send_msg(buyer.node, self.quote.seller.node)
-                        timedout.append(self.quote)
-                        record.record_failure_reason(job.id, "Timedout")
-                        self.quote = None
-
-            if trace: trace("run out of valid quotes")
-     
-            if len(rejected) + len(timedout) == 0 and len(self.invalid_quotes) > 0:
-                record.record_failure_reason(job.id, "High Buyer Limit")
+    def quote_timedout(self):
+        # only first time out triggers the bidding
+        if not self.has_timedout:
+            self.trace and self.trace("buyer timed out")
+            record.buyer_timeouts.observe(now() - self.start_time)
+            self.has_timedout = True
+            self.accept_best_quote()
 
 
-            if buyer.migrations < 5:
-                buyer.migrations += 1
-                buyer.migrate()
+    def accept_best_quote(self):
+        if self.accept_process:
+           self.trace("WARNING: accept process already active")
+        elif self.valid_quotes:
+            
+            # always resort quotes (we may have got other 
+            # quotes in the mean time)
+            self.valid_quotes.sort(key=lambda q: q.price)
+            self.trace and self.trace("have %d valid quotes" 
+                    % len(self.valid_quotes))
+
+            # accept the cheapest quote
+            self.current_quote = self.valid_quotes.pop(0)
+            accept = Accept(self.current_quote)
+            accept.send_msg(self.node, self.current_quote.seller.node)
+            self.trace and self.trace("accepting best ask: %s" 
+                    % self.current_quote.str(self))
+            self.accepted.add(self.current_quote)
+
+            # start accept process
+            self.accept_process = AcceptProcess(self, self.current_quote)
+            activate(self.accept_process, self.accept_process.accept())
+
+        else:
+            self.trace and self.trace("no valid quotes")
+
+            if self.migrations < 5:
+                self.migrations += 1
+                self.migrate()
             else:
+                self.trace and self.trace("no more migrations allowed!")
+                if (len(self.rejected) + len(self.timedout) == 0 and 
+                        len(self.invalid_quotes) > 0):
+                    record.record_failure_reason(job.id, "High Buyer Limit")
                 record.record_failure(quote)
-                if trace: trace("no more migrations allowed!")
-                buyer.finish_trading()
-                raise StopIteration
+                self.finish_trading()
+                self.cancel_all()
 
-        # signalling methods called by messages
 
-        # called by PrivateQuote
-        @reactivate_on_call
-        def receive_quote(self, quote):
-            if quote.price <= self.buyer.rationale.limit:
-                self.valid_quotes.append(quote)
-            else:
-                self.invalid_quotes.append(quote)
-            self.have_received_quote = True
+    #internal AcceptProcess interface
+    def confirm_received(self, confirm):
+        if confirm == self.current_quote: # current quote confirmed
+            self.trace and self.trace("accept confirmed")
+            record.record_trade(confirm, True)
+            self.finish_trading()
+            self.cancel_all()
+            self.accept_process = None
 
-        # called by confirm message
-        @reactivate_on_call
-        def confirm(self, quote):
-            """Mark a quote as confirmed and reactivate"""
-            self.confirmed = quote
-     
-        # called by reject message
-        @reactivate_on_call
-        def reject(self, quote):
-            """Mark a quote as rejected and reactivate"""
-            self.rejected = quote
+        elif confirm in self.timedout: # old quote confirms
+            self.trace and self.trace("got confirm from timed out quote")
+            # TODO: may want to go with this confirm instead, as it
+            # was probably better than the current one
+        else: # unknown confirm
+            self.trace("WARNING: got random confirm: %s" 
+                    % confirm.str(self))
+
+    def reject_received(self, reject):
+        if reject == self.current_quote: # current quote rejected
+            self.trace and self.trace("accept rejected, choosing next quote")
+            self.rejected.add(self.current_quote.job.id)
+            record.record_failure_reason(reject.job.id, "Too Busy Later")
+            self.current_quote = None
+            self.accept_process = None
+
+            # move onto next quote
+            self.accept_best_quote()
+
+        elif reject in self.timedout:
+            self.trace and self.trace("accept rejected, but had already timed out")
+        else:
+            self.trace("WARNING: got reject for unknown quote: %s" 
+                    % reject.str(buyer))
+   
+
+    def accept_timedout(self, accept):
+        self.trace and self.trace(" accept timed out, sending cancel")
+        cancel = Cancel(accept)
+        cancel.send_msg(self.node, accept.seller.node)
+        self.timedout.add(self.current_quote)
+        record.record_failure_reason(accept.job.id, "Timedout")
+        self.current_quote = None
+        self.accept_process = None
+        self.accept_best_quote()
+
+
+
 
 

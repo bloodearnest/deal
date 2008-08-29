@@ -41,7 +41,7 @@ class GridModel(Model):
         self.graph = network.Network(
                 mean_degree,
                 (100,100),
-                (3,3),
+                (4,4),
                 latency_means,
                 global_latency,
                 latency_dist)
@@ -92,7 +92,7 @@ class GridModel(Model):
             record.sells_theory.append((n.seller.limit,
                                         n.resource.capacity * time,
                                         0))
-            n.seller.start_on(n)
+            n.seller.start()
         super(GridModel, self).start(*a, **kw)
 
         

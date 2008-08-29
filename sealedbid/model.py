@@ -1,7 +1,7 @@
 import random
 from models import GridModel
 from market import MarketRules
-from traders import ZIC, ZIP
+from rationales import ZIC, ZIP
 from stats import dists
 
 from buyer import SBBuyer
@@ -19,15 +19,18 @@ class SBModel(GridModel):
 
     def new_buyer(self, job, node):
         r = trader(True, blimits(), rules)
-        buyer = SBBuyer(job.id, r, job, 5, ttl=self.buyer_ttl)
-        buyer.start_on(node)
+        buyer = SBBuyer(job.id, r, job, ttl=self.buyer_ttl, )
+        buyer.start_on_node(node)
         return buyer
 
     def setup(self):
         for n in self.graph.nodes_iter():
             r = trader(False, slimits(), rules)
             r.price = random.randint(r.limit, rules.max)
-            n.seller = SBSeller(n.id, r, n, 60)
+            n.seller = SBSeller(n.id, r, n,
+                    quote_timout=60,
+                    accept_timeout=60
+                    )
 
 
 

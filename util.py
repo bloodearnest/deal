@@ -1,13 +1,7 @@
 import math
-from SimPy.Simulation import reactivate, Tally, Monitor
+from SimPy.Simulation import reactivate, Tally, Monitor, Process
 
 sortedtuple = lambda *x: tuple(sorted(x))
-
-def reactivate_on_call(func):
-    def entangle(cls, *a, **kw):
-        func(cls, *a, **kw)
-        reactivate(cls)
-    return entangle
 
 
 class RingBuffer(list):
@@ -34,6 +28,8 @@ class RingBuffer(list):
             self.cur = 0
             # Permanently change self's class from non-full to full
             self.__class__ = RingBuffer.__Full
+
+    add = append
 
 
 class JobTracker(object):
@@ -64,4 +60,26 @@ class JobTracker(object):
         else:
             vars = (tally.name, 0, 0)
         return s % vars
+
+class SignalProcess(Process):
+    def __init__(self, name=None):
+        super(SignalProcess, self).__init__(name)
+        self._signals = dict()
+    
+    def signal(self, name, value=None):
+        self._signals[name] = value
+        reactivate(self)
+
+    def have_signal(self, name):
+        return name in self._signals
+
+    def get_signal_value(self, name):
+        return self._signals.pop(name, None)
+
+def reactivate_on_call(func):
+    def entangle(cls, *a, **kw):
+        func(cls, *a, **kw)
+        reactivate(cls)
+    return entangle
+
 
