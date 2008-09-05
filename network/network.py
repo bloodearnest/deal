@@ -35,6 +35,7 @@ class Network(XGraph):
         return self.latency_dist(mean)
 
     def make_link(self, node, other):
+        assert node != other
         latency = self.latency_function(node, other)
         self.add_edge(node, other, latency)
 
