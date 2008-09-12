@@ -79,7 +79,9 @@ class SBBuyer(Buyer):
             self.accepted.add(self.current_quote)
 
             # start accept process
-            self.accept_process = AcceptProcess(self, self.current_quote)
+            self.accept_process = AcceptProcess(self,
+                    self.current_quote,
+                    self.accept_timeout)
             activate(self.accept_process, self.accept_process.accept())
 
         else:
