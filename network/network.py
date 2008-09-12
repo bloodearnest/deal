@@ -5,23 +5,24 @@ from node import Node
 class Network(XGraph):
 
     def __init__(self,
-            mean_degree,
             coord_space, 
             regions, 
             local_latencies,
             global_latency,
             latency_dist, 
-            distance_weight = 0.3, *a, **kw):
+            distance_weight = 0.3,
+            mean_degree = 8,
+            *a, **kw):
 
         super(Network, self).__init__(*a, **kw)
 
-        self.mean_degree = mean_degree
         self.coord_space = coord_space 
         self.regions = regions
         self.local_latencies = local_latencies
         self.latency_dist = latency_dist
         self.global_latency = global_latency
         self.distance_weight = distance_weight
+        self.mean_degree = mean_degree
 
         self.max_distance = math.sqrt((self.coord_space[0]/2)**2 + 
                                       (self.coord_space[1]/2)**2 ) 

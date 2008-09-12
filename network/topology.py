@@ -39,7 +39,7 @@ def generative_link(G, node, p_local, p_pref, p_social):
             nodes = [n for n in nodes if n.region != node.region]
 
     if not nodes:
-        print "WARNING: edge " + G.size() + " generated links choice not valid"
+        print "WARNING: edge " + str(G.size()) + " generated links choice not valid"
         nodes = valid_node_choices(G, node)
     
     if not nodes:

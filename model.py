@@ -32,7 +32,6 @@ class Model(object):
                 print "[%s] %02d%% [ETA: %s]" % (now.strftime('%H:%M:%S'),
                                                x,
                                                eta.strftime('%H:%M:%S'))
-                #print h.heap()
                 x += 5
 
     def setup():
@@ -48,7 +47,6 @@ class Model(object):
         """Generates new process entering the system"""
         p = DummyProcess("dummy process")
         p.start(p.pem())
-
 
     def run(self, *a, **kw):
         kw['until'] = kw.get('until', getattr(self, 'runtime', 100))
