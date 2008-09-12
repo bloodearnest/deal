@@ -42,5 +42,5 @@ class AllocateProcess
         self.agent = agent
 
     def allocate(self):
-        # send msg
+        msg = AllocationRequest(
         # wait for timeout
