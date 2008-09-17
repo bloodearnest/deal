@@ -1,52 +1,51 @@
+import random
 from models import GridModel
 import network
 import record
 from broker import Broker
+from agents import *
 from registry import *
 from messages import *
 
 class MdsModel(GridModel):
 
     def __init__(self, 
-            brokers=1,
             registry_type=Registry,
             **kw):
         super(MdsModel, self).__init__(**kw)
 
-        
-        # add model specific components
+        regions = self.graph.regions
+        self.regions = [(i,j) for i in range(regions[0]) 
+                              for j in range(regions[1])]
+
+        self.brokers = dict()
+        for r in regions:
+            node = self.random_region_node(r)
+            broker = Broker(r, node, registry_type())
+            self.brokers[r] = broker
+
         for node in self.graph.nodes_iter():
-            node.resource_agent = ResourceAgent(node)
-            node.broker = None
-            node.agents = dict()
+            node.broker = self.brokers[node.region]
+            # this nodes resource agent
+            node.resource_agent = ResourceAgent(node) 
+            # mapping of jobagents at this node
+            node.job_agents = dict()
 
-        brokers = []
-        for i in range(brokers):
-            node = self.random_node()
-            node.broker = Broker(node.id, node, registry_type())
-            brokers.append(broker)
+            #make a link to fast comms to the broker
+            self.graph.make_link(node, node.broker.node)
 
-        self.brokers = brokers
-
-        # random for no
-        for node in self.graph.nodes_iter():
-            broker = node.broker or random.choice(brokers)
-            node.resource_agent.add_broker(broker)
-
-    # to be overridden
     def new_process(self):
-        dst = self.random_node()
+        node = self.random_node()
         job = self.new_job()
-        buyer = Agent(job, dst)
-        buyer.add_broker(random.choice(self.brokers))
-        Agent.start()
+        agent = JobAgent(job)
+        agent.add_broker(node.broker)
+        agent.start_on(node)
 
     def start(self, *a, **kw):
-        time = kw["until"]
         for n in self.graph.nodes_iter():
             n.resource_agent.start()
-            if n.broker:
-                n.broker.start()
+        for b in self.brokers.values_iter():
+            b.start()
         super(EcoModel, self).start(*a, **kw)
 
         

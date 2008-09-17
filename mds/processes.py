@@ -29,18 +29,29 @@ class ResourceUpdateProcess(SignalProcess):
         yield hold, self, time
 
         while 1:
-            state = ResourceState(agent.id, agent.resource.free))
+            state = ResourceState(agent.id, agent.resource.free)
             for broker in agent.brokers:
                 msg = Update(state)
                 msg.send_msg(self.agent.node, broker.node)
             yield hold, self, self.agent.update_time
 
 
-class AllocateProcess
+class AllocateProcess(SignalProcess):
     def __init__(self, agent):
         super(AllocateProcess, self).__init__(self.__class__.__name__)
         self.agent = agent
 
     def allocate(self):
-        msg = AllocationRequest(
-        # wait for timeout
+        msg = AllocationRequest(agent.allocation)
+
+        msg.send_msg(agent.node, agent.broker.node)
+
+        yield hold, self, agent.allocate_timeout
+
+        if self.have_signal("response")
+            agent.response(self.get_signal_value("response"))
+        else
+            agent.trace and agent.trace("allocation timed out")
+
+
+

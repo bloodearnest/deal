@@ -1,7 +1,7 @@
-from message import MessageWithQuote
+from message import Message
 import record
 
-class MessageWithAllocation(Message)
+class MessageWithAllocation(Message):
     def __init__(self, allocation, *a, **kw):
         super(MessageWithAllocation, self).__init__(*a, **kw)
         self.allocation = allocation
@@ -18,10 +18,9 @@ class AllocationResponse(MessageWithAllocation):
     def process(self, src, dst, trace, **kw):
         id = self.allocation[0].id
         if id in dst.agents:
-            dst.agents[id].signal("response", self.allocation)
+            dst.job_agents[id].signal("response", self.allocation)
         else:
             trace("WARNING: agent %s not found at %s" % (id, dst))
-
 
 class Update(Message):
     def __init__(self, state, **kw):

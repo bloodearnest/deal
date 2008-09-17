@@ -2,8 +2,8 @@ from processes import *
 
 class Broker(object):
 
-    def __init__(self, id, node, registry):
-        self.id = id
+    def __init__(self, region, node, registry):
+        self.region = region
         self.node = node
         self.registry = registry
         self.process = None

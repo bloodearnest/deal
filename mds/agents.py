@@ -2,11 +2,10 @@ from processes import *
 from messages import *
 
 class Agent(object):
-    def __init__(self):
-        self.brokers = []
 
-    def add_broker(self, broker):
-        self.brokers.append(broker)
+    @property
+    def broker(self):
+        return self.node.broker
 
 class ResourceAgent(Agent):
     def __init__(self, node):
@@ -36,10 +35,4 @@ class JobAgent(Agent):
     def start_on(self, node):
         self.node = node
         self.start()
-
-
-
-
-
-    
 
