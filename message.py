@@ -29,37 +29,37 @@ class Message(Process):
 
         if src != None:
             latency = src.generate_latency(dst)
-            yield hold, self, latency
-            if trace: trace("arrived from %s" % src)
+            if latency:
+                yield hold, self, latency
+            trace and trace("arrived from %s" % src)
         else:
-            pass
-            if trace: trace("arrived from source")
+            trace and trace("arrived from source")
 
 
         if self.msgid in dst.server.msg_history:
             # TODO collect dropped stats
-            if trace: trace("already seen, dropping")
+            trace and trace("already seen, dropping")
             raise StopIteration
         else:
-            if trace: trace("adding to server history")
+            trace and trace("adding to server history")
             dst.server.msg_history.append(self.msgid)
 
         # wait for the processor, recording waiting stats
         yield request, self, dst.server.processor
 
-        if trace: trace("got processor")
+        trace and trace("got processor")
 
         # simulate the work
         yield hold, self, dst.server.service_time()
 
-        if trace: trace("processing")
+        trace and trace("processing")
 
         # do our work
         self.process(src, dst, trace, **kw)
 
         # release the processor
         yield release, self, dst.server.processor
-        if trace: trace("finished")
+        trace and trace("finished")
 
     def process(self, *a, **kw):
         pass

@@ -11,6 +11,7 @@ from SimPy.Simulation import now, Tally, Monitor
 
 from util import JobTracker
 
+
 buys = [] 
 buys_theory = []
 sells = []

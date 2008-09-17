@@ -21,7 +21,7 @@ class GridModel(Model):
                  service_dist = dists.gamma,
                  latency_means = dists.normal(0.1),
                  latency_dist = dists.gamma,
-                 global_latency = dists.gamma(0.1)
+                 global_latency = dists.gamma(0.3)
                  ):
 
 
@@ -60,6 +60,10 @@ class GridModel(Model):
 
     def random_node(self):
         return random.choice(self.nodes)
+
+    def random_region_nodes(self, region):
+        return random.choice([n for n in self.graph.nodes_iter()
+                              if n.region == region])
 
     def new_job(self):
         return Job(self.job_sizes(), self.job_durations())

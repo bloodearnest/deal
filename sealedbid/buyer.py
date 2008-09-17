@@ -30,6 +30,12 @@ class SBBuyer(Buyer):
         # TODO: add a initial buyer quoted price?
         quote = Bid(self, None, self.job, None)
         advert = Advert(quote)
+        
+        # send to self
+        self.trace and self.trace("buyer sending to self")
+        advert.send_msg(self.node, self.node, ttl=0)
+        
+        # send to others
         self.trace and self.trace("buyer shouting to %d nodes, ttl %s" 
                 % (self.node.degree, self.ttl))
         self.node.shout_msg(advert, ttl=self.ttl)

@@ -24,7 +24,9 @@ class Node(object):
         return len(self.neighbors)
 
     def generate_latency(self, other):
-        if self.graph.has_edge(self, other):
+        if self is other:
+            return 0
+        elif self.graph.has_edge(self, other):
             latency = self.graph.get_edge(self, other)
             return latency()
         elif hasattr(self.graph, "global_latency"):
@@ -55,7 +57,7 @@ class Node(object):
             old_history = msg.history
             msg.history = old_history.union(self.neighbors)
 
-            for dst in self.neighbors:
+            for dst in self.neighbors: # always send to self
                 if dst not in old_history: # not already seen
                     sent_some = True
                     if trace:
