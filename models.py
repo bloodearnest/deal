@@ -21,7 +21,8 @@ class GridModel(Model):
                  service_dist = dists.gamma,
                  latency_means = dists.normal(0.1),
                  latency_dist = dists.gamma,
-                 global_latency = dists.gamma(0.3)
+                 regional_latency = dists.gamma(0.2),
+                 global_latency = dists.gamma(0.4)
                  ):
 
 
@@ -44,6 +45,7 @@ class GridModel(Model):
                 coords,
                 regions,
                 latency_means,
+                regional_latency,
                 global_latency,
                 latency_dist)
         

@@ -8,6 +8,7 @@ class Network(XGraph):
             coord_space, 
             regions, 
             local_latencies,
+            regional_latency,
             global_latency,
             latency_dist, 
             distance_weight = 0.3,
@@ -20,6 +21,7 @@ class Network(XGraph):
         self.regions = regions
         self.local_latencies = local_latencies
         self.latency_dist = latency_dist
+        self.regional_latency = regional_latency
         self.global_latency = global_latency
         self.distance_weight = distance_weight
         self.mean_degree = mean_degree

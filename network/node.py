@@ -29,6 +29,8 @@ class Node(object):
         elif self.graph.has_edge(self, other):
             latency = self.graph.get_edge(self, other)
             return latency()
+        elif self.region == other.region and hasattr(self.graph, "global_latency"):
+            return self.graph.regional_latency()
         elif hasattr(self.graph, "global_latency"):
             return self.graph.global_latency()
         else:
