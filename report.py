@@ -1,7 +1,7 @@
 from __future__ import with_statement
 
 import stats
-import record
+from record import record
 import pylab
 from draw import plot_eq
 import equilibrium

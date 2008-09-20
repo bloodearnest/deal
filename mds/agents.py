@@ -2,6 +2,7 @@ from trace import Tracer
 from processes import *
 from messages import *
 from registry import *
+from record import mdsrecord as record
 
 class Agent(object):
 
@@ -22,6 +23,8 @@ class ResourceAgent(Agent):
         self.update_process = ResourceUpdateProcess(self)
         self.update_process.start(self.update_process.update())
 
+    def __str__(self):
+        return "ragent%d" % self.node.id
 
 class JobAgent(Agent):
     def __init__(self, job, allocate_time):
@@ -40,9 +43,16 @@ class JobAgent(Agent):
         self.node = node
         self.node.job_agents[self.job.id] = self
         self.trace = Tracer(self.node).add("jagent%-6s" % self.job.id)
+        self.trace = self.trace.add("j%-5s" % self.job.id)
         self.start()
 
     def response(self, allocation):
         self.trace and self.trace("got allocation: %s" % allocation)
+        record.record_success(allocation)
 
 
+    def fail(self):
+        record.record_failure(self.allocation)
+
+    def __str__(self):
+        return "jagent%d" % self.job.id

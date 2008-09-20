@@ -1,5 +1,5 @@
 from message import Message
-import record
+from record import mdsrecord as record
 
 class Allocation(object):
     def __init__(self, jagent, ragent=None):
@@ -9,6 +9,9 @@ class Allocation(object):
     @property
     def job(self):
         return self.jagent.job
+
+    def __str__(self):
+        return "Alloc(%s, %s)" % (self.jagent, self.ragent)
 
 
 class MessageWithAllocation(Message):

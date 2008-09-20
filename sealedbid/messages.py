@@ -1,6 +1,5 @@
 from SimPy.Simulation import reactivate
 from message import MessageWithQuote
-import record
 
 # listen process messages
 class Advert(MessageWithQuote):

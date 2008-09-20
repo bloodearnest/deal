@@ -54,6 +54,7 @@ class AllocateProcess(SignalProcess):
             self.agent.response(self.get_signal_value("response"))
         else:
             self.agent.trace and self.agent.trace("allocation timed out")
+            self.agent.fail()
 
 
 

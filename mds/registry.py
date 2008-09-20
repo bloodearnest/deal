@@ -1,5 +1,3 @@
-
-
 class ResourceState(object):
     def __init__(self, agent, free):
         self.agent = agent

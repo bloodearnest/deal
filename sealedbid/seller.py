@@ -1,6 +1,6 @@
 from SimPy.Simulation import activate, hold, passivate, reactivate, now, Process
 from util import reactivate_on_call, RingBuffer
-import record
+from record import ecorecord as record
 from market import Ask
 from traders.seller import Seller
 from traders.processes import *

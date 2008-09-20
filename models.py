@@ -2,7 +2,6 @@ import random
 from model import Model
 from grid import Server, GridResource, Job
 from stats import dists
-import record
 import network
 
 class GridModel(Model):

@@ -1,6 +1,6 @@
 from SimPy.Simulation import activate, reactivate, now, hold, Process
 from trace import Tracer
-import record
+from record import ecorecord as record
 
 from market import Bid
 from messages import *

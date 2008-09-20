@@ -2,9 +2,7 @@
 #psyco.full()
 import sys
 import trace
-import record
 import report
-from stats import dists
 from path import path
 
 from sealedbid.model import SBModel
@@ -43,7 +41,7 @@ for arg in sys.argv[1:]:
 m = model(**args)
 m.run()
 
-r = record.calc_results(m)
+r = m.calc_results()
 
 #print results
 report.printr(r)

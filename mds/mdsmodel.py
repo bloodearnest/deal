@@ -6,6 +6,7 @@ from broker import Broker
 from agents import *
 from registry import *
 from messages import *
+from record import mdsrecord as record
 
 class MdsModel(GridModel):
 
@@ -45,6 +46,9 @@ class MdsModel(GridModel):
         for b in self.brokers.itervalues():
             b.start()
         super(MdsModel, self).start(*a, **kw)
+
+    def calc_results(self):
+        return record.calc_results(self)
 
         
 

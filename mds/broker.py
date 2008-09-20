@@ -1,5 +1,6 @@
 from trace import Tracer
 from processes import *
+from record import mdsrecord as record
 
 class Broker(object):
 
@@ -16,7 +17,9 @@ class Broker(object):
         self.process.start(gen)
 
     def allocate(self, allocation):
-
+        trace = self.trace.add("j%-5s" % allocation.jagent.job.id)
+        
+        trace and trace("alloc request from %s" % allocation.jagent)
         states = self.registry.get_resources(allocation)
         # return the best system wide fit
         states.sort(key=lambda x: x.free)
@@ -24,14 +27,15 @@ class Broker(object):
         if states:
             state = states[0]
             alloc = Allocation(allocation.jagent, state.agent)
-            self.trace and self.trace("returning allocation")
             msg = AllocationResponse(alloc)
             msg.send_msg(self.node, alloc.jagent.node)
+            trace and trace("returning alloc %s" % alloc)
         else:
-            self.trace and self.trace("no valid allocations")
+            trace and trace("no valid allocations")
 
 
     def update(self, state):
+        self.trace and self.trace("updating state for %s" % state.agent)
         self.registry.update_state(state)
 
 

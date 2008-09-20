@@ -2,7 +2,7 @@ from models import GridModel
 from grid import Server, GridResource, Job
 from stats import dists
 import network
-import record
+from record import ecorecord as record
 
 
 class EcoModel(GridModel):
@@ -40,6 +40,9 @@ class EcoModel(GridModel):
             )
             n.seller.start()
         super(EcoModel, self).start(*a, **kw)
+
+    def calc_results(self):
+        return record.calc_results(self)
 
         
 
