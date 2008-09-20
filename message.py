@@ -83,19 +83,6 @@ class MessageWithQuote(Message):
         super(MessageWithQuote, self).__init__(*a, **kw)
         self.quote = quote
 
-    def record(self, node):
-        self.quote.job.nodes_visited.add(node.id)
-
-    def check_buyer(self, dst, trace):
-        buyer = self.quote.buyer
-        trace = trace.add("j%-5s" % self.quote.job.id)
-        if buyer in dst.buyers and buyer.active:
-            return buyer
-        elif buyer.id in dst.buyer_ids:
-            trace and trace("buyer has migrated")
-        else:
-            trace("WARNING: %s is not and has never been at %s" % (buyer, dst))
-        return None
 
 
 

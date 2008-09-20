@@ -16,12 +16,6 @@ class EcoModel(GridModel):
         network.generative_topology(self.graph)
         self.topology = "generative"
 
-        # add model specific components
-        for node in self.graph.nodes_iter():
-            node.seller = None
-            node.buyers = set()
-            node.buyer_ids = set()
-
     # to be overridden
     def new_buyer(self, job, node):
         return None
@@ -36,9 +30,9 @@ class EcoModel(GridModel):
         time = kw["until"]
         for n in self.graph.nodes_iter():
             record.sells_theory.append(
-                (n.seller.limit, n.resource.capacity * time, 0)
+                (n.resource_agent.limit, n.resource.capacity * time, 0)
             )
-            n.seller.start()
+            n.resource_agent.start()
         super(EcoModel, self).start(*a, **kw)
 
     def calc_results(self):

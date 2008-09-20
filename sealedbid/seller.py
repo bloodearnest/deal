@@ -54,7 +54,7 @@ class SBSeller(Seller):
                 
                 # sending confirmation message
                 trace and trace("got accept, sending confirm")
-                confirm = Confirm(quote)
+                confirm = Confirm(self, quote.buyer, quote)
                 confirm.send_msg(self.node, quote.buyer.node)
                 
                 # start procsses tpo listen for cancellations
@@ -70,7 +70,7 @@ class SBSeller(Seller):
             else: # we cannot honour our original quote
                 record.record_failure_reason(quote.job.id, "Too Busy Later")
                 trace and trace("got accept, now too busy, rejecting")
-                reject = Reject(quote)
+                reject = Reject(self, quote.buyer, quote)
                 reject.send_msg(self.node, quote.buyer.node)
                 self.rejected.add(quote.id)
 

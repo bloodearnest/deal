@@ -78,7 +78,7 @@ class SBBuyer(Buyer):
 
             # accept the cheapest quote
             self.current_quote = self.valid_quotes.pop(0)
-            accept = Accept(self.current_quote)
+            accept = Accept(self, self.current_quote.seller, self.current_quote)
             accept.send_msg(self.node, self.current_quote.seller.node)
             self.trace and self.trace("accepting best ask: %s" 
                     % self.current_quote.str(self))
@@ -102,7 +102,7 @@ class SBBuyer(Buyer):
                 self.finish_trading()
                 self.cancel_all()
 
-#internal AcceptProcess interface
+    #internal AcceptProcess interface
     def confirm_received(self, confirm):
         if confirm == self.current_quote: # current quote confirmed
             self.trace and self.trace("accept confirmed")
@@ -139,7 +139,7 @@ class SBBuyer(Buyer):
 
     def accept_timedout(self, accept):
         self.trace and self.trace(" accept timed out, sending cancel")
-        cancel = Cancel(accept)
+        cancel = Cancel(self, self.current_quote.seller, accept)
         cancel.send_msg(self.node, accept.seller.node)
         self.timedout.add(self.current_quote)
         record.record_failure_reason(accept.job.id, "Timedout")

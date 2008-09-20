@@ -18,7 +18,7 @@ class Buyer(Trader):
 
     def start(self):
         self.start_time = now()
-        self.node.buyers.add(self)
+        self.node.job_agents.add(self)
         self.listen_process = ListenProcess(self)
         activate(self.listen_process, self.listen_process.listen())
     
@@ -44,8 +44,8 @@ class Buyer(Trader):
     # buyer mobility utilities
     def remove_from_node(self):
         self.trace and self.trace("removing from %s" % self.node)
-        self.node.buyers.remove(self)
-        self.node.buyer_ids.add(self.id)
+        self.node.job_agents.remove(self)
+        self.node.old_job_agents.add(self)
 
     def migrate(self):
         self.trace and self.trace("migrating")

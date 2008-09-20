@@ -19,7 +19,7 @@ class SBModel(EcoModel):
 
     def new_buyer(self, job, node):
         r = rationale(True, blimits(), rules)
-        buyer = SBBuyer(job.id, r, job, ttl=self.buyer_ttl, )
+        buyer = SBBuyer(job.id, r, job, ttl=self.buyer_ttl)
         buyer.start_on_node(node)
         return buyer
 
@@ -30,7 +30,7 @@ class SBModel(EcoModel):
         for n in self.graph.nodes_iter():
             r = rationale(False, slimits(), rules)
             r.price = random.randint(r.limit, rules.max)
-            n.seller = SBSeller(n.id, r, n,
+            n.resource_agent = SBSeller(n.id, r, n,
                     quote_timout=60,
                     accept_timeout=60
                     )

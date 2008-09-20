@@ -14,6 +14,9 @@ class Node(object):
         self.location = location
         self.region = region
         self.graph = graph
+        self.resource_agent = None
+        self.job_agents = set()
+        self.old_job_agents = set()
 
     @property
     def neighbors(self):
@@ -36,9 +39,15 @@ class Node(object):
         else:
             raise StandardError("no link and no global latency!")
             
-    def confirm_buyer(self, buyer, trace):
-        if buyer not in self.buyers and buyer.id not in self.buyer_ids:
-            trace("WARNING: %s was never at %s" % (buyer, self))
+    def confirm_job_agent(self, agent, trace):
+        if agent in self.job_agents:
+            return agent
+        elif agent in self.old_job_agents:
+            trace and trace("%s was at %s, but has moved on" % (agent, self))
+        else:
+            trace("WARNING: %s is not/never was at %s" % (agent, self))
+        return None
+        
 
     def __str__(self):
         return "node %d" % self.id
