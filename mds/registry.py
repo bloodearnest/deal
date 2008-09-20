@@ -1,8 +1,8 @@
 
 
 class ResourceState(object):
-    def __init__(self, id, free):
-        self.id = id
+    def __init__(self, agent, free):
+        self.agent = agent
         self.free = free
 
 class Registry(object):
@@ -10,10 +10,11 @@ class Registry(object):
     def __init__(self):
         self.states = dict()
 
-    def get_resources(self, job):
-        return [s.id for s in states.iter_values() if s.free >= job.size]
+    def get_resources(self, allocation):
+        return [s for s in self.states.itervalues() 
+                if s.free >= allocation.job.size]
 
     def update_state(self, state):
-        self.states[state.id] = state
+        self.states[state.agent] = state
 
 

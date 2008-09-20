@@ -9,10 +9,12 @@ from path import path
 
 from sealedbid.model import SBModel
 #from cda.model import CDAModel
+from mds.mdsmodel import MdsModel
 
 models = dict(
         #cda=CDAModel,
-        sb=SBModel
+        sb=SBModel,
+        mds=MdsModel
         )
 
 args = {}

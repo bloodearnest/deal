@@ -1,6 +1,16 @@
 from message import Message
 import record
 
+class Allocation(object):
+    def __init__(self, jagent, ragent=None):
+        self.jagent = jagent
+        self.ragent = ragent
+
+    @property
+    def job(self):
+        return self.jagent.job
+
+
 class MessageWithAllocation(Message):
     def __init__(self, allocation, *a, **kw):
         super(MessageWithAllocation, self).__init__(*a, **kw)
@@ -9,27 +19,27 @@ class MessageWithAllocation(Message):
 class AllocationRequest(MessageWithAllocation):
     def process(self, src, dst, trace, **kw):
         if dst.broker:
-            dst.broker.signal("allocate", self.allocation)
+            dst.broker.process.signal("allocate", self.allocation)
         else:
             trace("WARNING: no broker for allocate request at node %s" %
                     (dst.id))
 
 class AllocationResponse(MessageWithAllocation):
     def process(self, src, dst, trace, **kw):
-        id = self.allocation[0].id
-        if id in dst.agents:
-            dst.job_agents[id].signal("response", self.allocation)
+        id = self.allocation.jagent.job.id
+        if id in dst.job_agents:
+            dst.job_agents[id].allocate_process.signal("response", self.allocation)
         else:
             trace("WARNING: agent %s not found at %s" % (id, dst))
 
 class Update(Message):
     def __init__(self, state, **kw):
-        super(Update, self).__init__(self)
+        super(Update, self).__init__()
         self.state = state
 
     def process(self, src, dst, trace, **kw):
         if dst.broker:
-            dst.broker.signal("update", self.state)
+            dst.broker.process.signal("update", self.state)
         else:
             trace("WARNING: no broker for allocate request at node %s" %
                     (dst.id))

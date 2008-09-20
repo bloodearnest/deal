@@ -63,7 +63,7 @@ class GridModel(Model):
     def random_node(self):
         return random.choice(self.nodes)
 
-    def random_region_nodes(self, region):
+    def random_region_node(self, region):
         return random.choice([n for n in self.graph.nodes_iter()
                               if n.region == region])
 

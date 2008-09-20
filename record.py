@@ -6,6 +6,7 @@ from scipy import stats as scipy
 import numpy
 import stats
 import equilibrium
+from ecomodel import EcoModel
 
 from SimPy.Simulation import now, Tally, Monitor
 
@@ -95,7 +96,7 @@ def calc_results(model):
 
     results["size"] = model.size
     results["load"] = model.load
-    results["topology"] = model.topology
+    results["topology"] = getattr(model, "topology", "none")
     counts["GENERAL"] += 3
 
     # grid performance
@@ -105,66 +106,66 @@ def calc_results(model):
     results["job penetration"] = job_penetration_tally.mean() / float(model.size) * 100.0
     counts["GRID"] += 4
 
-    # failure issues
-    results["prop failed"] = failures.count / float(njobs) * 100
-    results["mean_migrations"] = migrations.mean() / float(njobs) * 100
-
+    if model is EcoModel:
+        # failure issues
+        results["prop failed"] = failures.count / float(njobs) * 100
+        results["mean_migrations"] = migrations.mean() / float(njobs) * 100
     
-    results["failed_sizes_mean"] = failures.sizes.mean()
-    results["failed_sizes_skew"] = scipy.skew([n[1] for n in failures.sizes])
+        results["failed_sizes_mean"] = failures.sizes.mean()
+        results["failed_sizes_skew"] = scipy.skew([n[1] for n in failures.sizes])
 
-    results["failed_limits_mean"] = failures.limits.mean()
-    results["failed_limits_skew"] = scipy.skew([n[1] for n in failures.limits])
+        results["failed_limits_mean"] = failures.limits.mean()
+        results["failed_limits_skew"] = scipy.skew([n[1] for n in failures.limits])
 
-    results["failed_degrees_mean"] = failures.degrees.mean()
-    results["failed_degrees_skew"] = scipy.skew([n[1] for n in failures.degrees])
+        results["failed_degrees_mean"] = failures.degrees.mean()
+        results["failed_degrees_skew"] = scipy.skew([n[1] for n in failures.degrees])
 
-    results["succeeded_sizes_mean"] = successes.sizes.mean()
-    results["succeeded_sizes_skew"] = scipy.skew([n[1] for n in successes.sizes])
-    
-    results["succeeded_limits_mean"] = successes.limits.mean()
-    results["succeeded_limits_skew"] = scipy.skew([n[1] for n in successes.limits])
-    
-    results["succeeded_degrees_mean"] = successes.degrees.mean()
-    results["succeeded_degrees_skew"] = scipy.skew([n[1] for n in successes.degrees])
+        results["succeeded_sizes_mean"] = successes.sizes.mean()
+        results["succeeded_sizes_skew"] = scipy.skew([n[1] for n in successes.sizes])
+        
+        results["succeeded_limits_mean"] = successes.limits.mean()
+        results["succeeded_limits_skew"] = scipy.skew([n[1] for n in successes.limits])
+        
+        results["succeeded_degrees_mean"] = successes.degrees.mean()
+        results["succeeded_degrees_skew"] = scipy.skew([n[1] for n in successes.degrees])
 
-    counts["GRID"] += 14
+        counts["GRID"] += 14
 
-    for reason, count in failed.iteritems():
-        r = "prop failed by %s" % reason
-        if failures.count:
-            results[r] = count/float(failures.count) * 100
-        else:
-            results[r] = 0
-        counts["GRID"] += 1
+        for reason, count in failed.iteritems():
+            r = "prop failed by %s" % reason
+            if failures.count:
+                results[r] = count/float(failures.count) * 100
+            else:
+                results[r] = 0
+            counts["GRID"] += 1
 
-    # economic stuff
-    buys.sort()
-    buys.reverse()
-    sells.sort()
-    buys_theory.sort()
-    buys_theory.reverse()
-    sells_theory.sort()
-    
-    real = equilibrium.find_equilibrium(buys, sells)
-    theory = equilibrium.find_equilibrium(buys_theory, sells_theory)
-    eff = real[1] / theory[1] * 100
-    
-    results["eq price"] = real[0]
-    results["eq price theory"] = theory[0]
-    results["efficiency"] = eff
-    results["mean buyer util"] = buyer_util.mean()
-    results["mean seller util"] = seller_util.mean()
-    counts["ECO"] += 5
+        # economic stuff
+        buys.sort()
+        buys.reverse()
+        sells.sort()
+        buys_theory.sort()
+        buys_theory.reverse()
+        sells_theory.sort()
+        
+        real = equilibrium.find_equilibrium(buys, sells)
+        theory = equilibrium.find_equilibrium(buys_theory, sells_theory)
+        eff = real[1] / theory[1] * 100
+        
+        results["eq price"] = real[0]
+        results["eq price theory"] = theory[0]
+        results["efficiency"] = eff
+        results["mean buyer util"] = buyer_util.mean()
+        results["mean seller util"] = seller_util.mean()
+        counts["ECO"] += 5
 
-    G = model.graph
-    results["density"] = networkx.density(G)
-    results["mean_degree"] = sum(len(n.neighbors) for n in G.nodes_iter()) / float(G.order())
-    results["degree_skew"] = scipy.skew(networkx.degree(G))
-    results["diameter"] = float(networkx.diameter(G))
-    results["radius"] = float(networkx.radius(G))
-    results["transitivity"] = float(networkx.transitivity(G))
-    counts["NET"] += 6
+        G = model.graph
+        results["density"] = networkx.density(G)
+        results["mean_degree"] = sum(len(n.neighbors) for n in G.nodes_iter()) / float(G.order())
+        results["degree_skew"] = scipy.skew(networkx.degree(G))
+        results["diameter"] = float(networkx.diameter(G))
+        results["radius"] = float(networkx.radius(G))
+        results["transitivity"] = float(networkx.transitivity(G))
+        counts["NET"] += 6
 
 
     return results

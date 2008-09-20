@@ -1,5 +1,7 @@
+from trace import Tracer
 from processes import *
 from messages import *
+from registry import *
 
 class Agent(object):
 
@@ -8,12 +10,13 @@ class Agent(object):
         return self.node.broker
 
 class ResourceAgent(Agent):
-    def __init__(self, node):
-        super(ResourceAgent, self).__init__(self)
+    def __init__(self, node, update_time):
         self.node = node
-        self.resource = resource
+        self.update_time = update_time
+        self.resource = node.resource
         self.update_process = None
         self.confirm_processes = dict()
+        self.trace = Tracer(self.node).add("ragent%-6s" % node.id)
 
     def start(self):
         self.update_process = ResourceUpdateProcess(self)
@@ -21,12 +24,13 @@ class ResourceAgent(Agent):
 
 
 class JobAgent(Agent):
-    def __init__(self, job):
-        super(ResourceAgent, self).__init__(self)
+    def __init__(self, job, allocate_time):
         self.job = job
+        self.allocate_timeout = allocate_time
         self.allocate_process = None
         self.accept_process = None
-        self.allocation = (job, None)
+        self.allocation = Allocation(self, None)
+        self.trace = None
 
     def start(self):
         self.allocate_process = AllocateProcess(self)
@@ -34,5 +38,11 @@ class JobAgent(Agent):
 
     def start_on(self, node):
         self.node = node
+        self.node.job_agents[self.job.id] = self
+        self.trace = Tracer(self.node).add("jagent%-6s" % self.job.id)
         self.start()
+
+    def response(self, allocation):
+        self.trace and self.trace("got allocation: %s" % allocation)
+
 

@@ -1,19 +1,20 @@
-from messages import *
 from common_processes import *
+from messages import *
+from registry import *
 
 class BrokerProcess(SignalProcess):
     def __init__(self, broker):
-        super(Broker, self).__init__(self.__class__.__name__)
+        super(BrokerProcess, self).__init__(self.__class__.__name__)
         self.broker = broker
 
-    def broker(self):
+    def do_broker(self):
         while 1:
             yield passivate, self
 
             if self.have_signal("allocate"):
-                broker.allocate(self.get_signal_value("allocate"))
+                self.broker.allocate(self.get_signal_value("allocate"))
             elif self.have_signal("update"):
-                broker.update(self.get_signal_value("update"))
+                self.broker.update(self.get_signal_value("update"))
             else:
                 self.broker.trace("WARNING: broker woken up unexpetedly")
 
@@ -29,10 +30,10 @@ class ResourceUpdateProcess(SignalProcess):
         yield hold, self, time
 
         while 1:
-            state = ResourceState(agent.id, agent.resource.free)
-            for broker in agent.brokers:
-                msg = Update(state)
-                msg.send_msg(self.agent.node, broker.node)
+            self.agent.trace and self.agent.trace("sending resource state")
+            state = ResourceState(self.agent, self.agent.resource.free)
+            msg = Update(state)
+            msg.send_msg(self.agent.node, self.agent.broker.node)
             yield hold, self, self.agent.update_time
 
 
@@ -42,16 +43,17 @@ class AllocateProcess(SignalProcess):
         self.agent = agent
 
     def allocate(self):
-        msg = AllocationRequest(agent.allocation)
 
-        msg.send_msg(agent.node, agent.broker.node)
+        self.agent.trace and self.agent.trace("sending allocation")
+        msg = AllocationRequest(self.agent.allocation)
+        msg.send_msg(self.agent.node, self.agent.broker.node)
 
-        yield hold, self, agent.allocate_timeout
+        yield hold, self, self.agent.allocate_timeout
 
-        if self.have_signal("response")
-            agent.response(self.get_signal_value("response"))
-        else
-            agent.trace and agent.trace("allocation timed out")
+        if self.have_signal("response"):
+            self.agent.response(self.get_signal_value("response"))
+        else:
+            self.agent.trace and self.agent.trace("allocation timed out")
 
 
 
