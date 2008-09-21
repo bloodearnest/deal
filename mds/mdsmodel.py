@@ -21,7 +21,12 @@ class MdsModel(GridModel):
         self.brokers = dict()
         for r in self.regions:
             node = self.random_region_node(r)
-            broker = Broker(r, node, registry_type())
+            broker = Broker(
+                    r, 
+                    node, 
+                    registry_type(),
+                    60,
+                    self.brokers)
             self.brokers[r] = broker
 
         for node in self.graph.nodes_iter():

@@ -23,7 +23,7 @@ class MessageWithAllocation(Message):
 class AllocationRequest(MessageWithAllocation):
     def process(self, src, dst, trace, **kw):
         if dst.broker:
-            dst.broker.process.signal("allocate", self.allocation)
+            dst.broker.listen_process.signal("allocate", self.allocation)
         else:
             trace("WARNING: no broker for allocate request at node %s" %
                     (dst.id))
@@ -41,14 +41,20 @@ class Update(Message):
 
     def process(self, src, dst, trace, **kw):
         if dst.broker:
-            dst.broker.process.signal("update", self.state)
+            dst.broker.listen_process.signal("update", self.state)
         else:
-            trace("WARNING: no broker for allocate request at node %s" %
-                    (dst.id))
+            trace("WARNING: no broker for allocate request at %s" % dst)
 
 
+class SyncMessage(Message):
+    def __init__(self, states, **kw):
+        super(SyncMessage, self).__init__()
+        self.states = states
 
-
-
+    def process(self, src, dst, trace, **kw):
+        if dst.broker:
+            dst.broker.listen_process.signal("sync", self.states)
+        else:
+            trace("WARNING: no broker for sync request at %s" % dst)
 
 
