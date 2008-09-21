@@ -82,8 +82,8 @@ def calc_results(model):
 
     # failure issues
     results["job_penetration"] = job_penetration_tally.mean() / float(model.size) * 100.0
-    results["prop_failed"] = failures.count / float(njobs) * 100
-    results["mean_migrations"] = migrations.mean() / float(njobs) * 100
+    results["prop_failed"] = failures.count / float(njobs)
+    results["mean_migrations"] = migrations.mean() / float(njobs)
 
     results["failed_sizes_mean"] = failures.sizes.mean()
     results["failed_sizes_skew"] = scipy.skew([n[1] for n in failures.sizes])
@@ -108,7 +108,7 @@ def calc_results(model):
     for reason, count in failed.iteritems():
         r = "prop_failed_by_%s" % reason
         if failures.count:
-            results[r] = count/float(failures.count) * 100
+            results[r] = count/float(failures.count)
         else:
             results[r] = 0
         counts["GRID"] += 1

@@ -13,7 +13,6 @@ class SBSeller(Seller):
     def __init__(self, node, rationale,  **kw):
         super(SBSeller, self).__init__(node, rationale, **kw)
         self.offers = RingBuffer(500)
-        self.cancelled_ids = set()
     
     # internal ListenProcess interface
     def quote_received(self, quote):

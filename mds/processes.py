@@ -74,11 +74,6 @@ class AllocateProcess(SignalProcess):
         self.agent = agent
 
     def allocate(self):
-
-        self.agent.trace and self.agent.trace("sending allocation")
-        msg = AllocationRequest(self.agent.allocation)
-        msg.send_msg(self.agent.node, self.agent.broker.node)
-
         yield hold, self, self.agent.allocate_timeout
 
         if self.have_signal("response"):

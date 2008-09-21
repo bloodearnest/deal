@@ -70,8 +70,14 @@ def list_mean(items, getter):
 def mean_server_utilisation(model):
     return list_mean(model.nodes, lambda x: x.server.mean_utilisation)
 
+def mean_broker_server_util(model):
+    return list_mean(model.brokers.values(), lambda x: x.node.server.mean_utilisation)
+
 def mean_queue_time(model):
     return list_mean(model.nodes, lambda x: x.server.mean_queue_wait)
+
+def mean_broker_queue_time(model):
+    return list_mean(model.brokers.values(), lambda x: x.node.server.mean_queue_wait)
 
 def mean_resource_util(model):
     return list_mean(model.nodes, lambda x: x.resource.utilisation)

@@ -50,7 +50,9 @@ class GridModel(Model):
         
         # generate nodes, but no topology
         network.generate_nodes(self.graph, size)
-        
+ 
+        self.service_dist = service_dist
+        self.service_means = service_means
         for node in self.graph.nodes_iter():
             node.server = Server(node, service_dist(service_means()))
             node.resource = GridResource(node, int(resource_sizes()))

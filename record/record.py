@@ -18,8 +18,8 @@ def general_results(model, results):
     counts["GENERAL"] += 2
 
     # grid performance
-    results["resource_util"] = stats.mean_resource_util(model) * 100
-    results["server_util"] = stats.mean_server_utilisation(model) *100 
+    results["resource_util"] = stats.mean_resource_util(model)
+    results["server_util"] = stats.mean_server_utilisation(model)
     results["queue_time"] = stats.mean_queue_time(model)
     counts["GRID"] += 3
 

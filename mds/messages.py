@@ -11,6 +11,10 @@ class Allocation(object):
     def job(self):
         return self.jagent.job
 
+    @property
+    def id(self):
+        return self.jagent.job.id
+
     def __str__(self):
         return "Alloc(%s, %s)" % (self.jagent, self.ragent)
 

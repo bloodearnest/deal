@@ -6,19 +6,28 @@ from record import mdsrecord as record
 from agents import *
 
 class MdsJobAgent(JobAgent):
-    def __init__(self, job, allocate_timeout, accept_timeout):
+    def __init__(self, job, allocate_timeout, accept_timeout, max_attempts):
         JobAgent.__init__(self, job)
         self.allocate_timeout = allocate_timeout
         self.accept_timeout = accept_timeout
         self.allocation = Allocation(self, None)
+        self.attempts = 0
+        self.max_attempts = max_attempts
 
     @property
     def broker(self):
         return self.node.broker
 
-    def start(self):
+    def send_allocation_request(self):
+        self.attempts += 1
+        self.trace and self.trace("sending allocation request")
         self.allocate_process = AllocateProcess(self)
         self.allocate_process.start(self.allocate_process.allocate())
+        msg = AllocationRequest(self.allocation)
+        msg.send_msg(self.node, self.broker.node)
+
+    def start(self):
+        self.send_allocation_request()
 
     def start_on(self, node):
         self.node = node
@@ -33,14 +42,23 @@ class MdsJobAgent(JobAgent):
             self.allocation = alloc
             self.trace and self.trace("sending accept to %s" % alloc.ragent)
             self.start_accept_process(alloc.ragent, alloc, self.accept_timeout)
+        elif self.attempts < self.max_attempts:
+            self.trace and self.trace("no allocation, retrying")
+            self.send_allocation_request()
         else:
-            self.trace and self.trace("no allocation")
+            self.trace and self.trace("no response, attemps execeeded, failed")
             self.record_failure(self.allocation)
+            self.cancel_all()
             
 
     def allocate_timedout(self):
-        self.trace and self.trace("allocation request timedout")
-        self.record_failure(self.allocation)
+        if self.attempts < self.max_attempts:
+            self.trace and self.trace("no response, retrying")
+            self.send_allocation_request()
+        else:
+            self.trace and self.trace("no response, attemps execeeded, failed")
+            self.record_failure(self.allocation)
+            self.cancel_all()
 
 
     #internal AcceptProcess interface
@@ -74,17 +92,17 @@ class MdsJobAgent(JobAgent):
         self.trace and self.trace(" accept timed out, sending cancel")
         cancel = Cancel(self, accept.ragent, accept)
         cancel.send_msg(self.node, accept.ragent.node)
-        self.timedout.add(accept)
+        #self.timedout.add(accept)
         self.accept_process = None
 
         # TODO other alloc?
 
 
     def record_failure(self, alloc):
-        record.record_failure(alloc)
+        record.record_failure(self, alloc)
 
     def record_success(self, alloc):
-        record.record_success(alloc)
+        record.record_success(self, alloc)
 
 
     def __str__(self):

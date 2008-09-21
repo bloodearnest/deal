@@ -44,6 +44,7 @@ class Broker(object):
             msg = AllocationResponse(alloc)
             msg.send_msg(self.node, alloc.jagent.node)
             trace and trace("returning alloc %s" % alloc)
+            state.free -= allocation.job.size
         else:
             trace and trace("no valid allocations")
 
@@ -71,6 +72,15 @@ class Broker(object):
 
     def sync(self, states):
         self.trace and self.trace("syncing states from %s" % states.broker)
+        #print "xxx"
+        #print "----"
+        #for state in self.registry.states.itervalues():
+        #    print state.agent, state.free
+        #print "----"
         for state in states.itervalues():
+            #print state.agent, state.free
             self.registry.update_state(state)
+        #print "----"
+        #for state in self.registry.states.itervalues():
+        #    print state.agent, state.free
 

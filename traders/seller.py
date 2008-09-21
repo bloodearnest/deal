@@ -13,8 +13,6 @@ class Seller(ResourceAgent, Trader):
         self.trace = Tracer(node)
         self.trace = self.trace.add('%-12s' % self)
         self.listen_process = None
-        self.rejected = set()
-        self.cancelled = set()
 
     def start(self):
         self.listen_process = ListenProcess(self)

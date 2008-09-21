@@ -11,10 +11,13 @@ class JobAgent(object):
         self.listen_process = None
         self.trace = BaseTracer()
 
+        self.rejected = set()
+        self.cancelled = set()
+
     def start_accept_process(self, other, value, timeout):
         accept = Accept(self, other, value)
         accept.send_msg(self.node, other.node)
-        self.accept_process = AcceptProcess(self, other, timeout)
+        self.accept_process = AcceptProcess(self, value, timeout)
         self.accept_process.start(self.accept_process.accept())
 
 # clean up
@@ -66,6 +69,8 @@ class ResourceAgent(object):
         # sellers are trading on multiple jobs
         self.accept_processes = {}
         self.confirm_processes = {}
+        self.rejected = set()
+        self.cancelled = set()
 
     @property
     def resource(self):
@@ -112,7 +117,7 @@ class ResourceAgent(object):
     # public ConfirmProcess message interface
     def cancel(self, cancel):
         trace = self.trace.add("j%-5s" % cancel.id)
-        self.cancelled.add(cancel)
+        self.cancelled.add(cancel.id)
         if cancel.id in self.confirm_processes:
             process = self.confirm_processes[cancel.id]
             process.signal("cancel", cancel)

@@ -2,6 +2,7 @@ import random
 from models import GridModel
 import network
 import record
+from stats import dists
 from broker import Broker
 from mdsagents import *
 from registry import *
@@ -12,6 +13,7 @@ class MdsModel(GridModel):
 
     def __init__(self, 
             registry_type=Registry,
+            broker_means=dists.normal(0.05),
             **kw):
         super(MdsModel, self).__init__(**kw)
 
@@ -21,6 +23,7 @@ class MdsModel(GridModel):
         self.brokers = dict()
         for r in self.regions:
             node = self.random_region_node(r)
+            node.server.service_time = self.service_dist(broker_means())
             broker = Broker(
                     r, 
                     node, 
@@ -41,7 +44,7 @@ class MdsModel(GridModel):
     def new_process(self):
         node = self.random_node()
         job = self.new_job()
-        agent = MdsJobAgent(job, 20, 20)
+        agent = MdsJobAgent(job, 20, 20, 5)
         agent.start_on(node)
 
     def start(self, *a, **kw):
