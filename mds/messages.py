@@ -1,4 +1,5 @@
 from message import Message
+from common_messages import *
 from record import mdsrecord as record
 
 class Allocation(object):
@@ -29,11 +30,9 @@ class AllocationRequest(MessageWithAllocation):
 
 class AllocationResponse(MessageWithAllocation):
     def process(self, src, dst, trace, **kw):
-        id = self.allocation.jagent.job.id
-        if id in dst.job_agents:
-            dst.job_agents[id].allocate_process.signal("response", self.allocation)
-        else:
-            trace("WARNING: agent %s not found at %s" % (id, dst))
+        agent = check_target(dst, self.allocation.jagent, trace)
+        if agent:
+            agent.allocate_process.signal("response", self.allocation)
 
 class Update(Message):
     def __init__(self, state, **kw):

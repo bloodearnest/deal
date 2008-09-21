@@ -10,8 +10,8 @@ from messages import *
 
 class SBSeller(Seller):
 
-    def __init__(self, id, rationale, node, **kw):
-        super(SBSeller, self).__init__(id, rationale, node, **kw)
+    def __init__(self, node, rationale,  **kw):
+        super(SBSeller, self).__init__(node, rationale, **kw)
         self.offers = RingBuffer(500)
         self.cancelled_ids = set()
     
@@ -51,27 +51,13 @@ class SBSeller(Seller):
 
             # can we still do it?
             if self.resource.can_allocate(quote.job): 
+                self.confirm_and_start_job(
+                        quote.job, quote.buyer, quote)
                 
-                # sending confirmation message
-                trace and trace("got accept, sending confirm")
-                confirm = Confirm(self, quote.buyer, quote)
-                confirm.send_msg(self.node, quote.buyer.node)
-                
-                # start procsses tpo listen for cancellations
-                confirm_process = ConfirmProcess(self, quote)
-                activate(confirm_process, confirm_process.confirm())
-                self.confirm_processes[quote.job.id] = confirm_process
-
-                # start the job
-                trace and trace("starting job %s, eta %s" % 
-                        (quote.job.id, now() + quote.job.duration))
-                self.resource.start(quote.job, confirm_process)
-
             else: # we cannot honour our original quote
-                record.record_failure_reason(quote.job.id, "Too Busy Later")
                 trace and trace("got accept, now too busy, rejecting")
-                reject = Reject(self, quote.buyer, quote)
-                reject.send_msg(self.node, quote.buyer.node)
+                record.record_failure_reason(quote.job.id, "Too Busy Later")
+                self.send_reject(quote.buyer, quote)
                 self.rejected.add(quote.id)
 
         else: 
@@ -85,25 +71,6 @@ class SBSeller(Seller):
     def quote_timedout(self):
         pass
         #self.rationale.observe(self.price, False)
-
-    #internal ConfirmProcess interface
-    def cancel_received(self, cancel):
-        trace = self.trace.add('j%-5s' % cancel.job.id)
-
-        if cancel.job in self.resource.jobs:
-            trace and trace("got cancel, cancelling job %s" 
-                    % cancel.job.id)
-            self.resource.cancel(cancel.job);
-            del self.confirm_processes[cancel.job.id]
-        else:
-            trace("WARNING: got cancel for job not running (%s)"
-                    % cancel.job.id)
-
-    def complete_received(self, complete):
-        trace = self.trace.add('j%-5s' % complete.job.id)
-        trace and trace("job %s completed, cleaning up" 
-                % complete.job.id)
-        del self.confirm_processes[complete.job.id]
 
 
 

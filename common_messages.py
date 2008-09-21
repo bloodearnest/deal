@@ -15,8 +15,6 @@ def check_target(node, target, trace):
         return target
     elif node.confirm_job_agent(target, trace):
         return target
-    else:
-        trace("WARNING: %s not found at %s" % (target, node))
     return None
 
 

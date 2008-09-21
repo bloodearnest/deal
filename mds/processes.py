@@ -37,6 +37,22 @@ class ResourceUpdateProcess(SignalProcess):
             yield hold, self, self.agent.update_time
 
 
+class ResourceListenProcess(SignalProcess):
+    def __init__(self, agent):
+        super(ResourceListenProcess, self).__init__(self.__class__.__name__)
+        self.agent = agent
+
+    def listen(self):
+        while 1:
+            yield passivate, self
+
+            if self.have_signal("accept"):
+                self.agent.accept_received(self.get_signal_value("accept"))
+            elif self.agent.trace:
+                self.agent.trace("WARNING: ragent got unknown signal")
+                
+
+
 class AllocateProcess(SignalProcess):
     def __init__(self, agent):
         super(AllocateProcess, self).__init__(self.__class__.__name__)
@@ -53,8 +69,7 @@ class AllocateProcess(SignalProcess):
         if self.have_signal("response"):
             self.agent.response(self.get_signal_value("response"))
         else:
-            self.agent.trace and self.agent.trace("allocation timed out")
-            self.agent.fail()
+            self.agent.allocate_timedout()
 
 
 

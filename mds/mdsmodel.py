@@ -3,7 +3,7 @@ from models import GridModel
 import network
 import record
 from broker import Broker
-from agents import *
+from mdsagents import *
 from registry import *
 from messages import *
 from record import mdsrecord as record
@@ -27,9 +27,8 @@ class MdsModel(GridModel):
         for node in self.graph.nodes_iter():
             node.broker = self.brokers[node.region]
             # this nodes resource agent
-            node.resource_agent = ResourceAgent(node, 30) 
+            node.resource_agent = MdsResourceAgent(node, 30) 
             # mapping of jobagents at this node
-            node.job_agents = dict()
 
             # make a link to fast comms to the broker
             self.graph.make_link(node, node.broker.node)
@@ -37,7 +36,7 @@ class MdsModel(GridModel):
     def new_process(self):
         node = self.random_node()
         job = self.new_job()
-        agent = JobAgent(job, 20)
+        agent = MdsJobAgent(job, 20, 20)
         agent.start_on(node)
 
     def start(self, *a, **kw):

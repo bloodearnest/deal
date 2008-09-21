@@ -8,8 +8,8 @@ from traders.buyer import Buyer
 from traders.processes import *
 
 class SBBuyer(Buyer):
-    def __init__(self, id, rationale, job, ttl=2, **kw):
-        super(SBBuyer, self).__init__(id, rationale, job, **kw)
+    def __init__(self, job, rationale, ttl=2, **kw):
+        super(SBBuyer, self).__init__(job, rationale, **kw)
         self.ttl = ttl
         self.timedout = set()
         self.rejected = set()
@@ -78,17 +78,15 @@ class SBBuyer(Buyer):
 
             # accept the cheapest quote
             self.current_quote = self.valid_quotes.pop(0)
-            accept = Accept(self, self.current_quote.seller, self.current_quote)
-            accept.send_msg(self.node, self.current_quote.seller.node)
+            self.start_accept_process(
+                    self.current_quote.seller, 
+                    self.current_quote, 
+                    self.accept_timeout)
+            
             self.trace and self.trace("accepting best ask: %s" 
                     % self.current_quote.str(self))
+            
             self.accepted.add(self.current_quote)
-
-            # start accept process
-            self.accept_process = AcceptProcess(self,
-                    self.current_quote,
-                    self.accept_timeout)
-            activate(self.accept_process, self.accept_process.accept())
 
         else:
             self.trace and self.trace("no valid quotes")
@@ -123,7 +121,6 @@ class SBBuyer(Buyer):
         if reject == self.current_quote: # current quote rejected
             self.trace and self.trace("accept rejected, choosing next quote")
             self.rejected.add(self.current_quote.job.id)
-            record.record_failure_reason(reject.job.id, "Too Busy Later")
             self.current_quote = None
             self.accept_process = None
 
