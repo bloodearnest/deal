@@ -3,6 +3,11 @@ import equilibrium
 from SimPy.Simulation import now, Tally, Monitor
 from util import JobTracker
 import networkx
+from stats import skew
+from scipy import stats as scipy
+
+
+# eco stats 
 buys = [] 
 buys_theory = []
 sells = []
@@ -14,8 +19,14 @@ buyer_timeouts = Tally("buyer_timeouts")
 buyer_util = Tally("buyer_util")
 seller_util = Tally("seller_util")
 
-successes = JobTracker("successful")
-failures = JobTracker("failed")
+
+trackers = [ 
+    ("limits", lambda x,y: x.limit),
+    ("degrees", lambda x,y: len(x.node.neighbors) )
+]
+eco_succeeded_tracker = JobTracker("succeeded", trackers)
+eco_failed_tracker = JobTracker("failed", trackers)
+
 failed = defaultdict(int)
 
 failure_reasons_record = defaultdict(list)
@@ -34,10 +45,11 @@ for r in failure_reasons:
 job_penetration_tally = Tally("job penetration")
 migrations = Tally("migrations")
 
-def record_trade(quote, success=True):
-    t = now()
-    successes.record(quote)
+def record_success(agent, quote):
+    all_record_success(agent, quote.job)
+    eco_succeeded_tracker.record(agent, quote.job)
 
+    t = now()
     # record trade details
     trade = (quote.price, quote.quantity, t)
     trade_times.append(t)
@@ -48,9 +60,12 @@ def record_trade(quote, success=True):
     #record utility
     buyer_util.observe(quote.buyer.limit - quote.price)
     seller_util.observe(quote.price - quote.seller.limit)
+    
+    common_stats(agent, quote)
 
-def record_failure(quote):
-    failures.record(quote)
+def record_failure(agent, quote):
+    all_record_failure(agent, quote.job)
+    eco_failed_tracker.record(agent, quote.job)
     reasons = failure_reasons_record[quote.job.id]
 
     rcount = dict()
@@ -62,19 +77,19 @@ def record_failure(quote):
     for reason in rcount:
         failed[reason] += rcount[reason]
 
+    common_stats(agent, quote)
+
+def common_stats(agent, quote):
+    job_penetration_tally.observe(len(quote.job.nodes_visited))
+    migrations.observe(agent.migrations)
+
+    # clear up the memory using in tracking this job
+    if quote.job.id in failure_reasons:
+        del failure_reasons[job.id]
+
 def record_failure_reason(jobid, reason):
     assert reason in failure_reasons
     failure_reasons_record[jobid].append(reason)
-
-def clean_up_job(job):
-    # clear up the memory using in tracking this job
-    global njobs
-    njobs += 1
-    if job.id in failure_reasons:
-        del failure_reasons[job.id]
-    job_penetration_tally.observe(len(job.nodes_visited))
-
-
 
 def calc_results(model):
     global results, counts
@@ -82,36 +97,29 @@ def calc_results(model):
 
     # failure issues
     results["job_penetration"] = job_penetration_tally.mean() / float(model.size) * 100.0
-    results["prop_failed"] = failures.count / float(njobs)
-    results["mean_migrations"] = migrations.mean() / float(njobs)
+    results["mean_migrations"] = migrations.mean() / float(njobs.total)
 
-    results["failed_sizes_mean"] = failures.sizes.mean()
-    results["failed_sizes_skew"] = scipy.skew([n[1] for n in failures.sizes])
+    results["failed_limits_mean"] = eco_failed_tracker.limits.mean()
+    results["failed_limits_skew"] = stats.skew(eco_failed_tracker.limits)
 
-    results["failed_limits_mean"] = failures.limits.mean()
-    results["failed_limits_skew"] = scipy.skew([n[1] for n in failures.limits])
+    results["failed_degrees_mean"] = eco_failed_tracker.degrees.mean()
+    results["failed_degrees_skew"] = stats.skew(eco_failed_tracker.degrees)
 
-    results["failed_degrees_mean"] = failures.degrees.mean()
-    results["failed_degrees_skew"] = scipy.skew([n[1] for n in failures.degrees])
-
-    results["succeeded_sizes_mean"] = successes.sizes.mean()
-    results["succeeded_sizes_skew"] = scipy.skew([n[1] for n in successes.sizes])
+    results["succeeded_limits_mean"] = eco_succeeded_tracker.limits.mean()
+    results["succeeded_limits_skew"] = stats.skew(eco_succeeded_tracker.limits)
     
-    results["succeeded_limits_mean"] = successes.limits.mean()
-    results["succeeded_limits_skew"] = scipy.skew([n[1] for n in successes.limits])
-    
-    results["succeeded_degrees_mean"] = successes.degrees.mean()
-    results["succeeded_degrees_skew"] = scipy.skew([n[1] for n in successes.degrees])
+    results["succeeded_degrees_mean"] = eco_succeeded_tracker.degrees.mean()
+    results["succeeded_degrees_skew"] = stats.skew(eco_succeeded_tracker.degrees)
 
-    counts["GRID"] += 15
+    counts["ECO"] += 10
 
     for reason, count in failed.iteritems():
         r = "prop_failed_by_%s" % reason
-        if failures.count:
-            results[r] = count/float(failures.count)
+        if eco_failed_tracker.count:
+            results[r] = count/float(eco_failed_tracker.count)
         else:
             results[r] = 0
-        counts["GRID"] += 1
+        counts["ECO"] += 1
 
     # economic stuff
     buys.sort()

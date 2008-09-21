@@ -13,18 +13,25 @@ class MdsJobAgent(JobAgent):
         self.allocation = Allocation(self, None)
         self.attempts = 0
         self.max_attempts = max_attempts
+        
 
     @property
     def broker(self):
         return self.node.broker
 
     def send_allocation_request(self):
-        self.attempts += 1
-        self.trace and self.trace("sending allocation request")
-        self.allocate_process = AllocateProcess(self)
-        self.allocate_process.start(self.allocate_process.allocate())
-        msg = AllocationRequest(self.allocation)
-        msg.send_msg(self.node, self.broker.node)
+        if self.attempts < self.max_attempts:
+            self.allocation = Allocation(self, None)
+            self.attempts += 1
+            self.trace and self.trace("sending allocation (%s)", self.attempt)
+            self.allocate_process = AllocateProcess(self)
+            self.allocate_process.start(self.allocate_process.allocate())
+            msg = AllocationRequest(self.allocation)
+            msg.send_msg(self.node, self.broker.node)
+        else:
+            self.trace and self.trace("allocation attemps execeeded")
+            self.record_failure(self.allocation)
+            self.cancel_all()
 
     def start(self):
         self.send_allocation_request()
@@ -42,23 +49,14 @@ class MdsJobAgent(JobAgent):
             self.allocation = alloc
             self.trace and self.trace("sending accept to %s" % alloc.ragent)
             self.start_accept_process(alloc.ragent, alloc, self.accept_timeout)
-        elif self.attempts < self.max_attempts:
-            self.trace and self.trace("no allocation, retrying")
-            self.send_allocation_request()
         else:
-            self.trace and self.trace("no response, attemps execeeded, failed")
-            self.record_failure(self.allocation)
-            self.cancel_all()
+            self.trace and self.trace("broker gave null alloc")
+            self.send_allocation_request()
             
 
     def allocate_timedout(self):
-        if self.attempts < self.max_attempts:
-            self.trace and self.trace("no response, retrying")
-            self.send_allocation_request()
-        else:
-            self.trace and self.trace("no response, attemps execeeded, failed")
-            self.record_failure(self.allocation)
-            self.cancel_all()
+        self.trace and self.trace("allocation request timedout")
+        self.send_allocation_request()
 
 
     #internal AcceptProcess interface
@@ -69,7 +67,7 @@ class MdsJobAgent(JobAgent):
             self.cancel_all()
             self.accept_process = None
 
-        elif confirm in self.timedout: # old quote confirms
+        elif confirm in self.timedout: # old confirms
             self.trace and self.trace("got confirm from timed out quote")
         else: # unknown confirm
             self.trace("WARNING: got random confirm: %s" % confirm)
@@ -77,11 +75,7 @@ class MdsJobAgent(JobAgent):
     def reject_received(self, reject):
         if reject == self.allocation: # allocation rejected
             self.trace and self.trace("accept rejected")
-            self.accept_process = None
-            self.allocation = Allocation(self, None)
-            self.record_failure(reject)
-
-            # TODO other alloc?
+            self.send_allocation_request()
 
         elif reject in self.timedout:
             self.trace and self.trace("accept rejected, but had already timed out")
@@ -92,10 +86,7 @@ class MdsJobAgent(JobAgent):
         self.trace and self.trace(" accept timed out, sending cancel")
         cancel = Cancel(self, accept.ragent, accept)
         cancel.send_msg(self.node, accept.ragent.node)
-        #self.timedout.add(accept)
-        self.accept_process = None
-
-        # TODO other alloc?
+        self.send_allocation_request()
 
 
     def record_failure(self, alloc):

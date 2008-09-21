@@ -15,20 +15,31 @@ def printr(results):
     b = a + record.counts["GRID"] 
     c = b + record.counts["ECO"] 
     d = c + record.counts["NET"]
+    e = d + record.counts["MDS"]
 
     print "Grid:"
-    for k,v in results.items()[a:b]:
+    for k,v in results.items()[:b]:
         print " - %s: %s" % (k,v)
-
     print
-    print "Economy:"
-    for k,v in results.items()[b:c]:
-        print " - %s: %s" % (k,v)
 
-    print
-    print "Network:"
-    for k,v in results.items()[c:]:
-        print " - %s: %s" % (k,v)
+    if record.counts["ECO"]:
+        print "Economy:"
+        for k,v in results.items()[b:c]:
+            print " - %s: %s" % (k,v)
+        print
+
+    if record.counts["NET"]:
+        print "Network:"
+        for k,v in results.items()[c:d]:
+            print " - %s: %s" % (k,v)
+        print
+    
+    if record.counts["MDS"]:
+        print "MDS:"
+        for k,v in results.items()[d:e]:
+            print " - %s: %s" % (k,v)
+        print
+
 
 def write(results, out, fname):
     

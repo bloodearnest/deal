@@ -2,8 +2,11 @@ from trace import BaseTracer
 from common_messages import *
 from common_processes import *
 
+from SimPy.Simulation import now
+
 class JobAgent(object):
     def __init__(self, job):
+        self.start_time = now()
         self.job = job
         self.id = job.id
         self.accept_process = None
@@ -13,6 +16,7 @@ class JobAgent(object):
 
         self.rejected = set()
         self.cancelled = set()
+        self.timedout = set()
 
     def start_accept_process(self, other, value, timeout):
         accept = Accept(self, other, value)
@@ -20,7 +24,7 @@ class JobAgent(object):
         self.accept_process = AcceptProcess(self, value, timeout)
         self.accept_process.start(self.accept_process.accept())
 
-# clean up
+    # clean up
     def cancel_all(self):
         if self.listen_process:
             cancel_process(self.listen_process)
@@ -42,7 +46,7 @@ class JobAgent(object):
         if self.accept_process: 
             self.accept_process.signal("reject", reject)
         else:
-            self.trace("WARNING: no accept_process to receive reject")
+            self.trace("WARNING: no accept process to receive reject")
 
     # public ConfirmProcess message interface
     # buyers only ever have one confirm process

@@ -1,4 +1,5 @@
 from random import *
+import scipy.stats
 
 def random_other(seq, this):
     other = choice(seq)
@@ -82,6 +83,5 @@ def mean_broker_queue_time(model):
 def mean_resource_util(model):
     return list_mean(model.nodes, lambda x: x.resource.utilisation)
 
-# supply/demand calculations
-
-
+def skew(mon):
+    return scipy.stats.skew([n[1] for n in mon])

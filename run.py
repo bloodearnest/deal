@@ -47,9 +47,9 @@ r = m.calc_results()
 report.printr(r)
 report.write(r, output, fname)
 
-from guppy import hpy
-h = hpy()
-print h.heap()
+#from guppy import hpy
+#h = hpy()
+#print h.heap()
 
 
                   

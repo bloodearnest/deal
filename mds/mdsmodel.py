@@ -30,6 +30,12 @@ class MdsModel(GridModel):
                     registry_type(),
                     60,
                     self.brokers)
+            
+            # give them an intitial picture of the grid
+            for node in self.graph.nodes_in_region(r):
+                state = ResourceState(node.resource_agent, node.resource.free)
+                broker.registry.update_state(state)
+
             self.brokers[r] = broker
 
         for node in self.graph.nodes_iter():

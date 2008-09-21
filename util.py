@@ -1,5 +1,6 @@
 import math
-from SimPy.Simulation import reactivate, Tally, Monitor, Process
+from SimPy.Simulation import reactivate, Tally, Monitor, Process, now
+from odict import OrderedDict
 
 sortedtuple = lambda *x: tuple(sorted(x))
 
@@ -35,26 +36,29 @@ class RingBuffer(list):
 
 
 class JobTracker(object):
-    def __init__(self, name):
+    def __init__(self, name, trackers, cls=Monitor):
         self.name = name
-        self.sizes = Monitor(name + " job sizes")
-        self.limits = Monitor(name + " buyer limits")
-        self.degrees = Monitor(name + " buyer node degrees")
+        self.count = 0
+        self.trackers = OrderedDict()
+        for n, getter in trackers:
+            mon = cls("%s: %s" % (name, n))
+            self.trackers[n] = (mon, getter)
 
-    def record(self, quote):
-        self.sizes.observe(quote.job.size)
-        self.limits.observe(quote.buyer.limit)
-        self.degrees.observe(len(quote.buyer.node.neighbors))
+    def __getattr__(self, attr):
+        if attr in self.trackers:
+            return self.trackers[attr][0]
+        else:
+            raise AttributeError
 
-    @property
-    def count(self):
-        return self.sizes.count()
+    def record(self, agent, job):
+        for mon, getter in self.trackers.itervalues():
+            mon.observe(getter(agent, job))
+        self.count += 1
 
     def report(self):
-        print self._report(self.sizes)
-        print self._report(self.limits)
-        print self._report(self.degrees)
-
+        for mon, _ in self.trackers.itervalues():
+            print self._report(mon)
+    
     def _report(self, tally):
         s = "mean %s: %.2f (%.2f)"
         if tally.count():
@@ -62,6 +66,8 @@ class JobTracker(object):
         else:
             vars = (tally.name, 0, 0)
         return s % vars
+
+
 
 class SignalProcess(Process):
     def __init__(self, name=None):

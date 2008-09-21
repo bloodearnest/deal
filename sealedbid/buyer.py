@@ -151,14 +151,10 @@ class SBBuyer(Buyer):
                 len(self.invalid_quotes) > 0):
             record.record_failure_reason(self.job.id, "High Buyer Limit")
         quote = Bid(self, None, self.job, self.price)
-        record.record_failure(quote)
-        record.migrations.observe(self.migrations)
-        record.clean_up_job(self.job)
+        record.record_failure(self, quote)
 
     def record_success(self, quote):
-        record.record_trade(quote, True)
-        record.migrations.observe(self.migrations)
-        record.clean_up_job(self.job)
+        record.record_success(self, quote)
 
 
 

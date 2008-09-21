@@ -42,6 +42,9 @@ class Network(XGraph):
         latency = self.latency_function(node, other)
         self.add_edge(node, other, latency)
 
+    def nodes_in_region(self, region):
+        return [n for n in self.nodes_iter() if n.region == region]
+
 
 
 def generate_nodes(G, n):
