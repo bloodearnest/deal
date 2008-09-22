@@ -3,7 +3,7 @@ from grid import Server, GridResource, Job
 from stats import dists
 import network
 from record import ecorecord as record
-
+from SimPy.Simulation import Monitor
 
 class EcoModel(GridModel):
 
@@ -21,6 +21,8 @@ class EcoModel(GridModel):
                 mean_degree, p_local, p_pref, p_social)
 
         self.topology = "generative"
+
+        self.mons["price"] = Monitor("price")
 
     # to be overridden
     def new_buyer(self, job, node):
@@ -43,6 +45,12 @@ class EcoModel(GridModel):
 
     def calc_results(self):
         return record.calc_results(self)
+
+    def collect_stats(self):
+        super(EcoModel, self).collect_stats()
+        self.mons["price"].observe(record.collect_avg_price())
+
+
 
         
 

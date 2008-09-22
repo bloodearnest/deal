@@ -45,10 +45,20 @@ for r in failure_reasons:
 job_penetration_tally = Tally("job penetration")
 migrations = Tally("migrations")
 
+price_window = []
+def collect_avg_price():
+    global price_window
+    if not price_window:
+        return 0
+    mean = sum(price_window) / float(len(price_window))
+    price_window = []
+    return mean
+
 def record_success(agent, quote):
+    global price_window
     all_record_success(agent, quote.job)
     eco_succeeded_tracker.record(agent, quote.job)
-
+    price_window.append(quote.price)
     t = now()
     # record trade details
     trade = (quote.price, quote.quantity, t)
