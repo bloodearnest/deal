@@ -47,6 +47,13 @@ class MdsModel(GridModel):
             # make a link to fast comms to the broker
             self.graph.make_link(node, node.broker.node)
 
+        # ensure brokers have fast links to each other
+        for i, broker in enumerate(self.brokers.itervalues()):
+            for other in self.brokers.values()[i:]:
+                self.graph.make_link(broker.node, other.node)
+
+
+
     def new_process(self):
         node = self.random_node()
         job = self.new_job()
