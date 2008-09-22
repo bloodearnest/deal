@@ -22,13 +22,13 @@ def build_workdir(work_dir, rundir, xs, xname, ys, yname, extra='', reps=10):
 if __name__ == '__main__':
 
     # basic values to play with
-    loads =   ('load',        ["%.2f" % (0.2+i*0.2) for i in range(10)])
+    loads =   ('load',        [0.2, 0.4, 0.6, 0.8, 1.0, 1.2, 1.4, 1.6, 1.8, 2.0])
     sizes =   ('size',        [32,64,128,256,512,1024]) #,2048,4096,8192])
-    degrees = ('mean_degree', [2**i for i in range(2,6)])
-    reps = 6
+    degrees = ('mean_degree', [4,8,16,32,64])
+    reps = 10
 
     #extra = "mean_degree=64"
-    extra = " ttl=1"
+    extra = " ttl=1 size=100"
 
     # exp 1
     name = 'degree-load'
@@ -57,7 +57,7 @@ if __name__ == '__main__':
     #second = loads
     #extra += " topology=social"
 
-    root = path('/home/csunix/wavy/sim')
+    root = path('/home/csunix/wavy/')
     rundir = root / "results" / name
     create_dir(rundir)
     build_workdir(root/"work", rundir, first[1], first[0], second[1], second[0], extra, reps)

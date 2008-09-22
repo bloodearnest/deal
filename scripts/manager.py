@@ -21,7 +21,7 @@ while 1:
     if args:
         f.write('starting job "%s"\n' % args)
         f.flush()
-        retcode = os.system('exec.sh run.sh ' + args)
+        retcode = os.system('deal/scripts/exec.sh deal/scripts/run.sh ' + args)
         if retcode == 0:
             f.write('finished.')
         else:
