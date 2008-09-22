@@ -2,7 +2,10 @@ import random
 from model import Model
 from grid import Server, GridResource, Job
 from stats import dists
+import stats
 import network
+from odict import OrderedDict
+from SimPy.Simulation import Monitor
 
 class GridModel(Model):
     "Basic model of the Grid"
@@ -57,6 +60,11 @@ class GridModel(Model):
             node.server = Server(node, service_dist(service_means()))
             node.resource = GridResource(node, int(resource_sizes()))
 
+        self.mons = OrderedDict()
+        self.mons["grid_util"] = Monitor("grid_util")
+        self.mons["server_util"] = Monitor("server_util")
+        self.mons["server_queue"] = Monitor("server_queue")
+
     @property
     def nodes(self):
         return self.graph.nodes()
@@ -71,6 +79,14 @@ class GridModel(Model):
     def new_job(self):
         return Job(self.job_sizes(), self.job_durations())
 
+    def collect_stats(self):
+        self.mons["grid_util"].observe(stats.mean_resource_util(self))
+        self.mons["server_util"].observe(stats.mean_server_utilisation(self))
+        self.mons["server_queue"].observe(stats.mean_queue_time(self))
+
+    def get_series_mons(self):
+        for mon in self.mons.itervalues():
+            yield mon
 
         
 

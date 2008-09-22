@@ -45,7 +45,8 @@ r = m.calc_results()
 
 #print results
 report.printr(r)
-report.write(r, output, fname)
+report.write(r, output/fname)
+report.write_series(m, output/"series.dat")
 
 #from guppy import hpy
 #h = hpy()

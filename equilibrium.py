@@ -71,7 +71,7 @@ def find_equilibrium(buys, sells):
             eq_time = max(last_st, last_bt)
             break
 
-        elif sell > buy or (buy is None and sell is None):
+        elif sell > buy:
             # we have crossed the equilibrium point
             eq_price = (buy_prices[1] + sell_prices[1]) / 2.0
             eq_time = max(last_st, last_bt)
@@ -86,6 +86,10 @@ def find_equilibrium(buys, sells):
             buy_prices.append(buy)
             last_bt = bt
             last_st = st
+
+    if not eq_price:
+        eq_price = (buy + sell) / 2.0
+        eq_time = max(bt, st)
 
     return eq_price, surplus, eq_time
 

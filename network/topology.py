@@ -59,7 +59,14 @@ def roulette_select(nds):
         choices += [n for i in range(n.degree)]
     return random.choice(choices)
 
-def generative_topology(G, p_local = 0.0, p_pref = 0.0, p_social=0.0):
+def generative_topology(G, mean_degree, p_local, p_pref, p_social):
+    
+    # store stats
+    G.mean_degree = mean_degree
+    G.p_local = p_local
+    G.p_pref = p_pref
+    G.p_social = p_social
+    
     nodes = G.nodes()
     size = len(nodes)
     max_edges = size * G.mean_degree / 2 # 1 linq = +2 degrees!

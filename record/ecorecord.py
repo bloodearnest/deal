@@ -141,14 +141,17 @@ def calc_results(model):
     counts["ECO"] += 5
 
     G = model.graph
-    results["topology"] = getattr(model, "topology", "none")
+    results["mean_degree"] = model.graph.mean_degree
+    results["p_local"] = model.graph.p_local
+    results["p_pref"] = model.graph.p_pref
+    results["p_social"] = model.graph.p_social
     results["density"] = networkx.density(G)
     results["mean_degree"] = sum(len(n.neighbors) for n in G.nodes_iter()) / float(G.order())
     results["degree_skew"] = scipy.skew(networkx.degree(G))
     results["diameter"] = float(networkx.diameter(G))
     results["radius"] = float(networkx.radius(G))
     results["transitivity"] = float(networkx.transitivity(G))
-    counts["NET"] += 7
+    counts["NET"] += 10
 
 
     return results

@@ -16,6 +16,14 @@ class Model(object):
                 yield hold, self, model.inter_arrival_time()
                 model.new_process()
 
+    class StatCollector(Process):
+        def collect(self, model, n=300.0):
+            interval = model.runtime / n
+            while 1:
+                yield hold, self, interval
+                model.collect_stats()
+
+
     class Progress(Process):
         def report(self, until):
             h = hpy()
@@ -41,7 +49,9 @@ class Model(object):
         g = self.Generator('generator')
         g.start(g.generate(self))
         p = self.Progress('progress')
-        p.start(p.report(kw['until']))
+        p.start(p.report(self.runtime))
+        c = self.StatCollector('stats')
+        c.start(c.collect(self))
 
     def new_process(self):
         """Generates new process entering the system"""
@@ -50,6 +60,7 @@ class Model(object):
 
     def run(self, *a, **kw):
         kw['until'] = kw.get('until', getattr(self, 'runtime', 100))
+        self.runtime = kw['until']
         initialize()      
         self.start(*a, **kw)
         simulate(*a, **kw)

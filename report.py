@@ -41,10 +41,9 @@ def printr(results):
         print
 
 
-def write(results, out, fname):
-    
-    fname = out / fname
+def write(results, fname):
 
+    # write out global results
     write_headers = not fname.exists()
 
     with filelock(fname) as f:
@@ -53,15 +52,36 @@ def write(results, out, fname):
             f.write('\n')
             f.flush()
 
-        f.write(',\t'.join(str(v) for v in results.values()))
+        f.write(',\t'.join("%f" % v for v in results.values()))
         f.write('\n')
 
+def write_series(model, fname):
 
-    #plot_eq(record.buys, record.sells)
-    #pylab.savefig(out / "eq-real%d.png" %s )
-    #pylab.clf()
-    #plot_eq(record.buys_theory, record.sells_theory)
-    #pylab.savefig("theory.png")
+    iter = model.get_series_mons()
+    series = iter.next()
+    
+    with open(fname, 'w') as f:
+        f.write("time, ")
+        f.write(", ".join("%f" % i[0] for i in series))
+        f.write('\n')
+
+        f.write(series.name + ", ")
+        f.write(", ".join("%f" % i[1] for i in series))
+        f.write('\n')
+
+        for series in iter:
+            f.write(series.name + ", ")
+            f.write(", ".join("%f" % i[1] for i in series))
+            f.write('\n')
+
+
+
+
+
+
+
+
+
 
 
 

@@ -7,13 +7,19 @@ from record import ecorecord as record
 
 class EcoModel(GridModel):
 
-    def __init__(self, mean_degree=8, ttl=1, **kw):
+    def __init__(self, 
+            mean_degree=8,
+            ttl=1,
+            p_local = 0.0,
+            p_pref = 0.0,
+            p_social = 0.0,
+            **kw):
         super(EcoModel, self).__init__(**kw)
-
-        self.graph.mean_degree = mean_degree
         self.buyer_ttl = ttl
 
-        network.generative_topology(self.graph)
+        network.generative_topology(self.graph,
+                mean_degree, p_local, p_pref, p_social)
+
         self.topology = "generative"
 
     # to be overridden
