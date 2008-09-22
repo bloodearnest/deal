@@ -1,7 +1,9 @@
 import random
+from SimPy.Simulation import Monitor
 from models import GridModel
 import network
 import record
+import stats
 from stats import dists
 from broker import Broker
 from mdsagents import *
@@ -52,7 +54,8 @@ class MdsModel(GridModel):
             for other in self.brokers.values()[i:]:
                 self.graph.make_link(broker.node, other.node)
 
-
+        self.mons["broker_util"] = Monitor("broker_util")
+        self.mons["broker_queue"] = Monitor("broker_queue")
 
     def new_process(self):
         node = self.random_node()
@@ -69,6 +72,11 @@ class MdsModel(GridModel):
 
     def calc_results(self):
         return record.calc_results(self)
+        
+    def collect_stats(self):
+        super(MdsModel, self).collect_stats()
+        self.mons["broker_util"].observe(stats.mean_broker_server_util(self))
+        self.mons["broker_queue"].observe(stats.mean_broker_queue_time(self))
 
         
 
