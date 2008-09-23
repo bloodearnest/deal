@@ -23,4 +23,10 @@ class ListenProcess(SignalProcess):
                 self.trader.quote_timedout()
 
 
+class RationaleTimeout(Process):
+    def timeout(self, agent, id, quote, timeout, trace):
+        yield hold, self, timeout
+        agent.process_quote_timeout(id, quote, trace)
+
+
 

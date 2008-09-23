@@ -7,7 +7,7 @@ from agents import JobAgent
 class Buyer(JobAgent, Trader):
     def __init__(self, job, rationale, **kw):
         JobAgent.__init__(self, job)
-        Trader.__init__(self, rationale)
+        Trader.__init__(self, rationale, **kw)
         self.migrations = 0
         self.listen_process = None
 

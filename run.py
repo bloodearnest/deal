@@ -19,7 +19,8 @@ args = {}
 model = SBModel
 output = path("results")
 trace.enabled = False
-fname = path("raw.dat")
+res_fname = path("raw.dat")
+series_fname = path("series.dat")
 
 for arg in sys.argv[1:]:
     try:
@@ -31,7 +32,9 @@ for arg in sys.argv[1:]:
         elif k == "dir":
             output = path(v)
         elif k == "file":
-            fname = path(v)
+            res_fname = path(v)
+        elif k == "series":
+            series_fname = path(v)
         else:
             args[k] = eval(v)
     except:
@@ -45,8 +48,8 @@ r = m.calc_results()
 
 #print results
 report.printr(r)
-report.write(r, output/fname)
-report.write_series(m, output/"series.dat")
+report.write(r, output/res_fname)
+report.write_series(m, output/series_fname)
 
 #from guppy import hpy
 #h = hpy()

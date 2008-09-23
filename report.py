@@ -2,8 +2,6 @@ from __future__ import with_statement
 
 import stats
 from record import record
-import pylab
-from draw import plot_eq
 import equilibrium
 import path
 import fcntl

@@ -11,13 +11,9 @@ class SBBuyer(Buyer):
     def __init__(self, job, rationale, ttl=2, **kw):
         super(SBBuyer, self).__init__(job, rationale, **kw)
         self.ttl = ttl
-        self.timedout = set()
-        self.rejected = set()
-
         self.has_timedout = False
-
         self.valid_quotes = []
-        self.invalid_quotes = []
+        self.ninvalid_quotes = 0
         self.have_received_quote = False
 
     def start(self):
@@ -46,7 +42,7 @@ class SBBuyer(Buyer):
         if quote.price <= self.limit:
             self.valid_quotes.append(quote)
         else:
-            self.invalid_quotes.append(quote)
+            self.ninvalid_quotes += 1
             
         self.trace and self.trace("got %s" % (quote.str(self)))
         self.trace and self.trace("buyer timeout reset")
@@ -109,7 +105,7 @@ class SBBuyer(Buyer):
             self.cancel_all()
             self.accept_process = None
 
-        elif confirm in self.timedout: # old quote confirms
+        elif confirm.id in self.timedout: # old quote confirms
             self.trace and self.trace("got confirm from timed out quote")
             # TODO: may want to go with this confirm instead, as it
             # was probably better than the current one
@@ -120,14 +116,14 @@ class SBBuyer(Buyer):
     def reject_received(self, reject):
         if reject == self.current_quote: # current quote rejected
             self.trace and self.trace("accept rejected, choosing next quote")
-            self.rejected.add(self.current_quote.job.id)
+            self.nrejected += 1
             self.current_quote = None
             self.accept_process = None
 
             # move onto next quote
             self.accept_best_quote()
 
-        elif reject in self.timedout:
+        elif reject.id in self.timedout:
             self.trace and self.trace("accept rejected, but had already timed out")
         else:
             self.trace("WARNING: got reject for unknown quote: %s" 
@@ -138,7 +134,7 @@ class SBBuyer(Buyer):
         self.trace and self.trace(" accept timed out, sending cancel")
         cancel = Cancel(self, self.current_quote.seller, accept)
         cancel.send_msg(self.node, accept.seller.node)
-        self.timedout.add(self.current_quote)
+        self.timedout.add(self.current_quote.id)
         record.record_failure_reason(accept.job.id, "Timedout")
         self.current_quote = None
         self.accept_process = None
@@ -147,8 +143,8 @@ class SBBuyer(Buyer):
 
 
     def record_failure(self):
-        if (len(self.rejected) + len(self.timedout) == 0 and 
-                len(self.invalid_quotes) > 0):
+        if (self.nrejected + len(self.timedout) == 0 and 
+                self.ninvalid_quotes > 0):
             record.record_failure_reason(self.job.id, "High Buyer Limit")
         quote = Bid(self, None, self.job, self.price)
         record.record_failure(self, quote)

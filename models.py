@@ -14,17 +14,17 @@ class GridModel(Model):
                  load=1.0,
                  regions=(4,4),
                  coords=(100,100),
-                 run_times=3,
+                 run_times=6,
                  arrival_dist = dists.expon,
-                 resource_sizes = dists.gamma(100),
-                 job_sizes = dists.gamma(20),
-                 job_durations = dists.gamma(100),
+                 resource_sizes = dists.gamma(100, 10),
+                 job_sizes = dists.gamma(20, 4),
+                 job_durations = dists.gamma(100, 10),
                  service_means = dists.normal(0.1),
-                 service_dist = dists.gamma,
+                 service_dist = dists.shaped_gamma(0.1),
                  latency_means = dists.normal(0.1),
-                 latency_dist = dists.gamma,
-                 regional_latency = dists.gamma(0.2),
-                 global_latency = dists.gamma(0.4)
+                 latency_dist = dists.shaped_gamma(0.1),
+                 regional_latency = dists.gamma(0.2, 0.1),
+                 global_latency = dists.gamma(0.4, 0.1)
                  ):
 
 
@@ -79,10 +79,10 @@ class GridModel(Model):
     def new_job(self):
         return Job(self.job_sizes(), self.job_durations())
 
-    def collect_stats(self):
-        self.mons["grid_util"].observe(stats.mean_resource_util(self))
-        self.mons["server_util"].observe(stats.mean_server_utilisation(self))
-        self.mons["server_queue"].observe(stats.mean_queue_time(self))
+    def collect_stats(self, tlast):
+        self.mons["grid_util"].observe(stats.current_grid_util(self, tlast))
+        self.mons["server_util"].observe(stats.current_server_util(self, tlast))
+        self.mons["server_queue"].observe(stats.current_server_queue(self, tlast))
 
     def get_series_mons(self):
         for mon in self.mons.itervalues():

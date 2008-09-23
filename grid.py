@@ -1,7 +1,7 @@
 import itertools
 from random import choice
-from SimPy.Simulation import Process, Resource, Tally, hold
-
+from SimPy.Simulation import Process, Resource, Tally, hold, Monitor
+import stats
 from util import RingBuffer
 
 class Server(object):
@@ -13,7 +13,7 @@ class Server(object):
         # servers processor resource, with stats
         self.processor = Resource(name="Server at %s" % node,
                                   monitored=True,
-                                  monitorType=Tally)
+                                  monitorType=Monitor)
 
         # recent history of messages, to avoid re-handling
         self.msg_history = RingBuffer(500)
@@ -31,13 +31,19 @@ class Server(object):
         """The time waited mean processor utilisation."""
         return self.processor.actMon.timeAverage()
 
+    def current_util(self, tlast):
+        return stats.timeslice_average(self.processor.actMon, tlast)
+
+    def current_queue(self, tlast):
+        return stats.timeslice_average(self.processor.waitMon, tlast)
 
 class GridResource(object):
     def __init__(self, node, capacity):
         self.node = node
         self.capacity = capacity
         self.jobs = set()
-        self.util = Tally("Resource %d utilisation" % node.id)
+        self.util = Monitor("Resource %d utilisation" % node.id)
+        self.util.observe(0,0)
 
     def can_allocate(self, job):
         return job.size <= self.free
@@ -76,6 +82,8 @@ class GridResource(object):
     def utilisation(self):
         return self.util.timeAverage()
 
+    def current_util(self, tlast):
+        return stats.timeslice_average(self.util, tlast)
 
 
 class Job(Process):
@@ -93,6 +101,8 @@ class Job(Process):
         resource.remove(self)
         confirm_process.signal("complete")
 
+    def __str__(self):
+        return "j(%d, %.2f, %.2f)" % (self.id, self.size, self.duration)
 
     @property
     def quantity(self):

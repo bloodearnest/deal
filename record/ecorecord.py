@@ -109,17 +109,17 @@ def calc_results(model):
     results["job_penetration"] = job_penetration_tally.mean() / float(model.size) * 100.0
     results["mean_migrations"] = migrations.mean() / float(njobs.total)
 
-    results["failed_limits_mean"] = eco_failed_tracker.limits.mean()
-    results["failed_limits_skew"] = stats.skew(eco_failed_tracker.limits)
-
-    results["failed_degrees_mean"] = eco_failed_tracker.degrees.mean()
-    results["failed_degrees_skew"] = stats.skew(eco_failed_tracker.degrees)
-
     results["succeeded_limits_mean"] = eco_succeeded_tracker.limits.mean()
     results["succeeded_limits_skew"] = stats.skew(eco_succeeded_tracker.limits)
     
     results["succeeded_degrees_mean"] = eco_succeeded_tracker.degrees.mean()
     results["succeeded_degrees_skew"] = stats.skew(eco_succeeded_tracker.degrees)
+
+    results["failed_limits_mean"] = eco_failed_tracker.limits.mean() if njobs.failed else 0
+    results["failed_limits_skew"] = stats.skew(eco_failed_tracker.limits) if njobs.failed else 0
+
+    results["failed_degrees_mean"] = eco_failed_tracker.degrees.mean() if njobs.failed else 0
+    results["failed_degrees_skew"] = stats.skew(eco_failed_tracker.degrees) if njobs.failed else 0
 
     counts["ECO"] += 10
 

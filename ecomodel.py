@@ -3,7 +3,7 @@ from grid import Server, GridResource, Job
 from stats import dists
 import network
 from record import ecorecord as record
-from SimPy.Simulation import Monitor
+from SimPy.Simulation import Monitor, now
 
 class EcoModel(GridModel):
 
@@ -46,9 +46,23 @@ class EcoModel(GridModel):
     def calc_results(self):
         return record.calc_results(self)
 
-    def collect_stats(self):
-        super(EcoModel, self).collect_stats()
+    def collect_stats(self, tlast):
+        super(EcoModel, self).collect_stats(tlast)
         self.mons["price"].observe(record.collect_avg_price())
+
+
+    def print_node(self, n, tlast):
+        print "%.2f: node %02d: %03d/%0.2f/%d: %.2f/%.2f/%.2f" % (
+               now(),
+               n.id,
+               n.resource.capacity,
+               n.resource_agent.limit,
+               len(n.neighbors),
+               n.resource.current_util(tlast), 
+               n.server.current_util(tlast),
+               n.server.current_queue(tlast)
+               )
+
 
 
 

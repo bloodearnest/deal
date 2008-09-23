@@ -1,6 +1,6 @@
 import random
 from datetime import datetime, timedelta
-from SimPy.Simulation import initialize, simulate, hold, Process
+from SimPy.Simulation import initialize, simulate, hold, Process, now
 from guppy import hpy
 
 class DummyProcess(Process):
@@ -19,9 +19,11 @@ class Model(object):
     class StatCollector(Process):
         def collect(self, model, n=300.0):
             interval = model.runtime / n
+            tlast = 0
             while 1:
                 yield hold, self, interval
-                model.collect_stats()
+                model.collect_stats(tlast)
+                tlast = now()
 
 
     class Progress(Process):

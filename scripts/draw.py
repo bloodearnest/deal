@@ -88,10 +88,26 @@ def plot_eq(buys, sells):
     pylab.plot(sx, sy)
 
 
+def floatise(seq):
+    return [float(i.strip()) for i in seq]
+
+def plot_series(file):
+
+    lines = [l.split(',') for l in open(file).readlines()]
+    xlabel = lines[0][0]
+    xdata = floatise(lines[0][1:])
+
+
+    for line in lines[1:]:
+        print "plotting", line[0]
+        pylab.clf()
+        pylab.plot(xdata, floatise(line[1:]))
+        pylab.savefig(file + "." + line[0] + ".png")
 
     
 
 
-
+if __name__ == "__main__":
+    draw.plot_series("results/series.dat")
 
 

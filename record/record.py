@@ -48,7 +48,7 @@ def general_results(model, results):
 
     # grid performance
     results["resource_util"] = stats.mean_resource_util(model)
-    results["server_util"] = stats.mean_server_utilisation(model)
+    results["server_util"] = stats.mean_server_util(model)
     results["queue_time"] = stats.mean_queue_time(model)
     results["prop_failed"] = njobs.prop_failed
     
@@ -58,11 +58,11 @@ def general_results(model, results):
     results["succeed_times_mean"] = succeeded_tracker.times.mean()
     results["succeed_times_skew"] = stats.skew(succeeded_tracker.times)
     
-    results["failed_sizes_mean"] = failed_tracker.sizes.mean()
-    results["failed_sizes_skew"] = stats.skew(failed_tracker.sizes)
+    results["failed_sizes_mean"] = failed_tracker.sizes.mean() if njobs.failed else 0
+    results["failed_sizes_skew"] = stats.skew(failed_tracker.sizes) if njobs.failed else 0
     
-    results["failed_times_mean"] = failed_tracker.times.mean()
-    results["failed_times_skew"] = stats.skew(failed_tracker.times)
+    results["failed_times_mean"] = failed_tracker.times.mean() if njobs.failed else 0
+    results["failed_times_skew"] = stats.skew(failed_tracker.times) if njobs.failed else 0 
     
     counts["GRID"] += 12
 

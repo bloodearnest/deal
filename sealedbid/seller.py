@@ -13,7 +13,7 @@ class SBSeller(Seller):
     def __init__(self, node, rationale,  **kw):
         super(SBSeller, self).__init__(node, rationale, **kw)
         self.offers = RingBuffer(500)
-    
+
     # internal ListenProcess interface
     def quote_received(self, quote):
         trace = self.trace.add('j%-5s' % quote.job.id)
@@ -27,7 +27,8 @@ class SBSeller(Seller):
                 quote = Ask(quote.buyer, self, quote.job, self.price)
                 private = PrivateQuote(quote)
                 private.send_msg(self.node, quote.buyer.node)
-                
+                self.set_quote_timeout(quote, trace)
+
                 self.offers.add(quote)
                 trace and trace("sending offer %s" % quote)
 
@@ -35,7 +36,7 @@ class SBSeller(Seller):
                 # TODO: add this record to the job object
                 record.record_failure_reason(quote.job.id, "Too Busy")
                 trace and trace("resource has no room for job")
-                self.rejected.add(quote.id)
+                self.nrejected += 1
         else:
             trace("WARNING: received advert for job already trading for")
 
@@ -46,6 +47,8 @@ class SBSeller(Seller):
         if quote in self.offers:
             # we know this one
             trace and trace("got accept from %s" % quote.buyer)
+            
+            self.cancel_quote_timeout(quote.id, trace)
             self.rationale.observe(quote, True)
 
             # can we still do it?
@@ -57,7 +60,7 @@ class SBSeller(Seller):
                 trace and trace("got accept, now too busy, rejecting")
                 record.record_failure_reason(quote.job.id, "Too Busy Later")
                 self.send_reject(quote.buyer, quote)
-                self.rejected.add(quote.id)
+                self.nrejected += 1
 
         else: 
             trace and trace("got an accept for a job we've timed out on")
@@ -68,8 +71,9 @@ class SBSeller(Seller):
     reject = Seller.disable("reject")
 
     def quote_timedout(self):
+        """this is for a regular pulse timeout"""
         pass
-        #self.rationale.observe(self.price, False)
+        #self.rationale.observe(Ask(None, self, None, self.price), False)
 
 
 

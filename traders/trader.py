@@ -1,13 +1,13 @@
 from trace import BaseTracer
 
 class Trader(object):
-    def __init__(self, rationale, **kw):
+    def __init__(self, rationale, quote_timeout, accept_timeout):
         self.rationale = rationale
         self.active = True
         self.price = self.rationale.quote()
         self.regions = set()
-        self.quote_timeout = kw.pop("quote_timeout", 5)
-        self.accept_timeout = kw.pop("accept_timeout", 10)
+        self.quote_timeout = quote_timeout
+        self.accept_timeout = accept_timeout
     
     @property
     def limit(self):

@@ -22,7 +22,9 @@ class Quote(object):
 
     def __eq__(self, other):
         return (self.price == other.price and
-                self.job == other.job)
+                self.job == other.job and
+                self.buyer.node == other.buyer.node and
+                self.seller == other.seller)
 
     def __str__(self):
         return 'q(%.2f, j%d)' % (self.price/100.0, self.job.id)
@@ -33,7 +35,7 @@ class Quote(object):
 
     @property
     def id(self):
-        return self.job.id
+        return (self.job.id, self.buyer.node.id)
 
 def Bid(*a, **kw):
     """Factory for a Bid quote"""

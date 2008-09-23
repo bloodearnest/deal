@@ -1,4 +1,5 @@
 from trace import BaseTracer
+from util import RingBuffer
 from common_messages import *
 from common_processes import *
 
@@ -14,9 +15,11 @@ class JobAgent(object):
         self.listen_process = None
         self.trace = BaseTracer()
 
-        self.rejected = set()
+        # use sets for job agents for the lookup speed, don't
+        # worry about memory as they're only around for a bit
         self.cancelled = set()
         self.timedout = set()
+        self.nrejected = 0
 
     def start_accept_process(self, other, value, timeout):
         accept = Accept(self, other, value)
@@ -73,8 +76,12 @@ class ResourceAgent(object):
         # sellers are trading on multiple jobs
         self.accept_processes = {}
         self.confirm_processes = {}
-        self.rejected = set()
-        self.cancelled = set()
+
+        # use ring buffers for space saving since 
+        # resource agents are long lived
+        self.nrejected = 0
+        self.cancelled = RingBuffer(400)
+        self.timedout = RingBuffer(400)
 
     @property
     def resource(self):
